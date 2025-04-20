@@ -45,16 +45,30 @@ export default function LoginPage() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error, data } = await supabase.auth.signInWithPassword({
         email: values.email,
         password: values.password,
       });
 
-      if (error) {
-        throw error;
+      if (error) throw error;
+
+      // Check if the user is an admin
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('is_approved')
+        .eq('id', data.user.id)
+        .single();
+
+      if (profileError) throw profileError;
+
+      // Redirect to admin dashboard if user is approved
+      if (profileData?.is_approved) {
+        navigate('/admin/dashboard');
+      } else {
+        // Regular user redirect
+        navigate('/dashboard');
       }
 
-      navigate('/dashboard');
     } catch (error) {
       toast({
         variant: "destructive",

@@ -3,9 +3,10 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function Navbar() {
-  const isLoggedIn = false; // Will connect to auth later
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
 
   return (
@@ -35,7 +36,7 @@ export function Navbar() {
         </nav>
         
         <div className="flex items-center gap-4">
-          {isLoggedIn ? (
+          {user ? (
             <div className="flex items-center gap-4">
               <Button 
                 variant="outline" 
@@ -44,10 +45,28 @@ export function Navbar() {
               >
                 Dashboard
               </Button>
-              <Avatar className="h-8 w-8 cursor-pointer" onClick={() => navigate('/profile')}>
-                <AvatarImage src="/placeholder.svg" alt="User" />
-                <AvatarFallback>U</AvatarFallback>
-              </Avatar>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Avatar className="h-8 w-8 cursor-pointer">
+                    <AvatarImage src="/placeholder.svg" alt={user.email || 'User'} />
+                    <AvatarFallback>{user.email?.[0].toUpperCase() || 'U'}</AvatarFallback>
+                  </Avatar>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={() => navigate('/dashboard/profile')}>
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => navigate('/dashboard/settings')}>
+                    Settings
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={signOut}>
+                    Log out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           ) : (
             <div className="flex items-center gap-2">

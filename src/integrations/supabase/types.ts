@@ -9,7 +9,129 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      assets: {
+        Row: {
+          created_at: string
+          description: string | null
+          file_url: string | null
+          id: string
+          title: string | null
+          type: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          file_url?: string | null
+          id?: string
+          title?: string | null
+          type?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          file_url?: string | null
+          id?: string
+          title?: string | null
+          type?: string | null
+        }
+        Relationships: []
+      }
+      payouts: {
+        Row: {
+          amount: number | null
+          id: string
+          requested_at: string
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount?: number | null
+          id?: string
+          requested_at?: string
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number | null
+          id?: string
+          requested_at?: string
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          is_approved: boolean | null
+          is_creator: boolean | null
+          name: string | null
+          total_earnings: number | null
+          total_views: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          is_approved?: boolean | null
+          is_creator?: boolean | null
+          name?: string | null
+          total_earnings?: number | null
+          total_views?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_approved?: boolean | null
+          is_creator?: boolean | null
+          name?: string | null
+          total_earnings?: number | null
+          total_views?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      submissions: {
+        Row: {
+          affiliate_link: string | null
+          asset_used: string | null
+          content_url: string | null
+          created_at: string
+          earnings: number | null
+          id: string
+          status: string | null
+          type: string | null
+          user_id: string | null
+          views: number | null
+        }
+        Insert: {
+          affiliate_link?: string | null
+          asset_used?: string | null
+          content_url?: string | null
+          created_at?: string
+          earnings?: number | null
+          id?: string
+          status?: string | null
+          type?: string | null
+          user_id?: string | null
+          views?: number | null
+        }
+        Update: {
+          affiliate_link?: string | null
+          asset_used?: string | null
+          content_url?: string | null
+          created_at?: string
+          earnings?: number | null
+          id?: string
+          status?: string | null
+          type?: string | null
+          user_id?: string | null
+          views?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

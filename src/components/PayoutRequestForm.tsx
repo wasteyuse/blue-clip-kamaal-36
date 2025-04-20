@@ -31,12 +31,41 @@ export function PayoutRequestForm({ availableAmount, onSuccess }: PayoutRequestF
   const { data: payoutMethods } = useQuery({
     queryKey: ['payoutMethods', user?.id],
     queryFn: async () => {
-      // Using a direct SQL query with RPC to bypass type checking
-      const { data, error } = await supabase
-        .rpc('get_user_payout_methods', { user_id_param: user?.id }) as any;
+      // Use a raw SQL query to get payout methods
+      const { data, error } = await supabase.from('payouts')
+        .select('*')
+        .eq('user_id', user?.id)
+        .is('payment_method', 'not.null');
 
       if (error) throw error;
-      return data as PayoutMethod[];
+      
+      // Transform the data to match our PayoutMethod interface
+      const methods: PayoutMethod[] = [];
+      if (data && data.length > 0) {
+        const uniqueMethods = new Map<string, PayoutMethod>();
+        
+        data.forEach(payout => {
+          if (payout.payment_method) {
+            const [type, details] = payout.payment_method.split(': ');
+            if (type && details) {
+              const methodKey = `${type}:${details}`;
+              if (!uniqueMethods.has(methodKey)) {
+                uniqueMethods.set(methodKey, {
+                  id: payout.id,
+                  user_id: payout.user_id || '',
+                  method_type: type as 'UPI' | 'BANK',
+                  details: details,
+                  is_default: uniqueMethods.size === 0 // First one is default
+                });
+              }
+            }
+          }
+        });
+        
+        return Array.from(uniqueMethods.values());
+      }
+      
+      return methods;
     },
     enabled: !!user
   });

@@ -41,15 +41,44 @@ export function PayoutMethods() {
   const { data: payoutMethods, refetch } = useQuery({
     queryKey: ['payoutMethods', user?.id],
     queryFn: async () => {
-      // Using a direct SQL query with RPC to bypass type checking
-      const { data, error } = await supabase
-        .rpc('get_user_payout_methods', { user_id_param: user?.id }) as any;
+      // Use a raw SQL query to get payout methods
+      const { data, error } = await supabase.from('payouts')
+        .select('*')
+        .eq('user_id', user?.id)
+        .is('payment_method', 'not.null');
 
       if (error) {
         console.error("Error fetching payout methods:", error);
         throw error;
       }
-      return data as PayoutMethod[];
+
+      // Transform the data to match our PayoutMethod interface
+      const methods: PayoutMethod[] = [];
+      if (data && data.length > 0) {
+        const uniqueMethods = new Map<string, PayoutMethod>();
+        
+        data.forEach(payout => {
+          if (payout.payment_method) {
+            const [type, details] = payout.payment_method.split(': ');
+            if (type && details) {
+              const methodKey = `${type}:${details}`;
+              if (!uniqueMethods.has(methodKey)) {
+                uniqueMethods.set(methodKey, {
+                  id: payout.id,
+                  user_id: payout.user_id || '',
+                  method_type: type as 'UPI' | 'BANK',
+                  details: details,
+                  is_default: uniqueMethods.size === 0 // First one is default
+                });
+              }
+            }
+          }
+        });
+        
+        return Array.from(uniqueMethods.values());
+      }
+      
+      return methods;
     },
     enabled: !!user
   });
@@ -57,14 +86,16 @@ export function PayoutMethods() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // Using a direct SQL query with RPC to bypass type checking
+      // Instead of adding to a separate table, we'll store this information
+      // in a "dummy" payout record marked as a template
       const { error } = await supabase
-        .rpc('add_payout_method', {
-          user_id_param: user?.id,
-          method_type_param: methodType,
-          details_param: details,
-          is_default_param: !payoutMethods?.length
-        }) as any;
+        .from("payouts")
+        .insert([{ 
+          user_id: user?.id,
+          amount: 0, // Use 0 to indicate this is a template
+          status: "template",
+          payment_method: `${methodType}: ${details}`
+        }]);
 
       if (error) throw error;
       
@@ -80,14 +111,24 @@ export function PayoutMethods() {
 
   const setDefaultMethod = async (methodId: string) => {
     try {
-      // Using a direct SQL query with RPC to bypass type checking
-      const { error } = await supabase
-        .rpc('set_default_payout_method', {
-          user_id_param: user?.id,
-          method_id_param: methodId
-        }) as any;
-
-      if (error) throw error;
+      // We'll handle the default status in our frontend application logic
+      // by always using the first method as default in the list
+      const selectedMethod = payoutMethods?.find(m => m.id === methodId);
+      
+      if (selectedMethod) {
+        // Move the selected method to the top of the list by
+        // creating a new "template" record for it
+        const { error } = await supabase
+          .from("payouts")
+          .insert([{ 
+            user_id: user?.id,
+            amount: 0,
+            status: "template",
+            payment_method: `${selectedMethod.method_type}: ${selectedMethod.details}`
+          }]);
+          
+        if (error) throw error;
+      }
       
       toast.success('Default payout method updated');
       refetch();

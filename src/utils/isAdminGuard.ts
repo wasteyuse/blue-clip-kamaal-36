@@ -19,14 +19,12 @@ export function useAdminGuard() {
 
       try {
         const { data, error } = await supabase
-          .from('profiles')
-          .select('is_approved')
-          .eq('id', user.id)
+          .from('admins')
+          .select('id')
+          .eq('user_id', user.id)
           .single();
 
-        if (error) throw error;
-
-        if (!data || !data.is_approved) {
+        if (error || !data) {
           navigate('/dashboard');
           return;
         }
@@ -45,3 +43,13 @@ export function useAdminGuard() {
 
   return { isAdmin, isLoading };
 }
+
+export const isAdmin = async (userId: string) => {
+  const { data, error } = await supabase
+    .from('admins')
+    .select('id')
+    .eq('user_id', userId)
+    .single();
+
+  return data && !error;
+};

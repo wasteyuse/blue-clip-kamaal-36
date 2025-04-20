@@ -12,6 +12,7 @@ import { Users } from "lucide-react";
 export default function UsersPage() {
   const { isAdmin, isLoading } = useAdminGuard();
   const [users, setUsers] = useState<any[]>([]);
+  const [admins, setAdmins] = useState<Record<string, boolean>>({});
   const [searchTerm, setSearchTerm] = useState("");
   const [isTableLoading, setIsTableLoading] = useState(true);
   const { toast } = useToast();
@@ -19,6 +20,7 @@ export default function UsersPage() {
   useEffect(() => {
     if (isAdmin) {
       fetchUsers();
+      fetchAdmins();
     }
   }, [isAdmin]);
 
@@ -40,6 +42,31 @@ export default function UsersPage() {
       });
     } finally {
       setIsTableLoading(false);
+    }
+  }
+
+  async function fetchAdmins() {
+    try {
+      const { data, error } = await supabase
+        .from('admins')
+        .select('user_id');
+
+      if (error) throw error;
+      
+      // Create a map of user_id to admin status
+      const adminMap: Record<string, boolean> = {};
+      (data || []).forEach(admin => {
+        adminMap[admin.user_id] = true;
+      });
+      
+      setAdmins(adminMap);
+    } catch (error) {
+      console.error('Error fetching admins:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load admin data",
+        variant: "destructive",
+      });
     }
   }
 
@@ -71,26 +98,40 @@ export default function UsersPage() {
     }
   }
 
-  async function approveCreator(userId: string) {
+  async function toggleAdminStatus(userId: string, isCurrentlyAdmin: boolean) {
     try {
-      const { error } = await supabase.functions.invoke('manage-creators', {
-        body: { userId }
-      });
+      if (isCurrentlyAdmin) {
+        // Remove from admins table
+        const { error } = await supabase
+          .from('admins')
+          .delete()
+          .eq('user_id', userId);
 
-      if (error) throw error;
+        if (error) throw error;
+      } else {
+        // Add to admins table
+        const { error } = await supabase
+          .from('admins')
+          .insert([{ user_id: userId }]);
+
+        if (error) throw error;
+      }
       
-      // Refresh users after approval
-      fetchUsers();
+      // Update local state
+      setAdmins({
+        ...admins,
+        [userId]: !isCurrentlyAdmin
+      });
       
       toast({
         title: "Success",
-        description: "Creator approved successfully",
+        description: `User admin status ${!isCurrentlyAdmin ? 'enabled' : 'disabled'}`,
       });
     } catch (error) {
-      console.error('Error approving creator:', error);
+      console.error('Error updating admin status:', error);
       toast({
         title: "Error",
-        description: "Failed to approve creator",
+        description: "Failed to update admin status",
         variant: "destructive",
       });
     }
@@ -112,7 +153,7 @@ export default function UsersPage() {
           <Users className="h-6 w-6 text-blue-500" />
           <h1 className="text-3xl font-bold">User Management</h1>
         </div>
-        <Button onClick={fetchUsers} variant="outline">Refresh</Button>
+        <Button onClick={() => { fetchUsers(); fetchAdmins(); }} variant="outline">Refresh</Button>
       </div>
       
       <div className="mb-6">
@@ -154,7 +195,7 @@ export default function UsersPage() {
                       )}
                     </TableCell>
                     <TableCell>
-                      {user.is_approved ? (
+                      {admins[user.id] ? (
                         <Badge variant="success" className="bg-blue-100 text-blue-800">Yes</Badge>
                       ) : (
                         <Badge variant="outline" className="bg-gray-100">No</Badge>
@@ -172,15 +213,13 @@ export default function UsersPage() {
                           {user.is_creator ? 'Disable Creator' : 'Enable Creator'}
                         </Button>
                         
-                        {user.is_creator && !user.is_approved && (
-                          <Button 
-                            variant="default" 
-                            size="sm"
-                            onClick={() => approveCreator(user.id)}
-                          >
-                            Approve Admin
-                          </Button>
-                        )}
+                        <Button 
+                          variant={admins[user.id] ? "destructive" : "default"} 
+                          size="sm"
+                          onClick={() => toggleAdminStatus(user.id, admins[user.id] || false)}
+                        >
+                          {admins[user.id] ? 'Remove Admin' : 'Make Admin'}
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>

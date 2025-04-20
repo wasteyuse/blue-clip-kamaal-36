@@ -53,16 +53,18 @@ export default function LoginPage() {
       if (error) throw error;
 
       // Check if the user is an admin
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('is_approved')
-        .eq('id', data.user.id)
+      const { data: adminData, error: adminError } = await supabase
+        .from('admins')
+        .select('id')
+        .eq('user_id', data.user.id)
         .single();
 
-      if (profileError) throw profileError;
+      if (adminError && adminError.code !== 'PGRST116') { // Not found error is okay
+        throw adminError;
+      }
 
-      // Redirect to admin dashboard if user is approved
-      if (profileData?.is_approved) {
+      // Redirect to admin dashboard if user is an admin
+      if (adminData) {
         navigate('/admin/dashboard');
       } else {
         // Regular user redirect

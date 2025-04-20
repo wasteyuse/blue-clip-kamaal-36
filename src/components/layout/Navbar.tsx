@@ -12,6 +12,14 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+} from "@/components/ui/navigation-menu";
 
 export function Navbar() {
   const { user, signOut } = useAuth();
@@ -31,17 +39,67 @@ export function Navbar() {
           </Link>
         </div>
         
-        <nav className="hidden md:flex items-center gap-6">
-          <Link to="/" className="text-sm font-medium hover:text-primary">
-            Home
-          </Link>
-          <Link to="/how-it-works" className="text-sm font-medium hover:text-primary">
-            How It Works
-          </Link>
-          <Link to="/creators" className="text-sm font-medium hover:text-primary">
-            Creators
-          </Link>
-        </nav>
+        <NavigationMenu className="hidden md:flex">
+          <NavigationMenuList>
+            <NavigationMenuItem>
+              <Link to="/" className="text-sm font-medium hover:text-primary px-4 py-2">
+                Home
+              </Link>
+            </NavigationMenuItem>
+            
+            <NavigationMenuItem>
+              <NavigationMenuTrigger>Resources</NavigationMenuTrigger>
+              <NavigationMenuContent className="bg-white p-4 rounded-md shadow-lg min-w-[200px]">
+                <div className="grid gap-2">
+                  <Link 
+                    to="/dashboard/assets" 
+                    className="text-sm hover:bg-gray-100 p-2 rounded-md"
+                  >
+                    Assets Library
+                  </Link>
+                  <Link 
+                    to="/dashboard/content" 
+                    className="text-sm hover:bg-gray-100 p-2 rounded-md"
+                  >
+                    Content
+                  </Link>
+                </div>
+              </NavigationMenuContent>
+            </NavigationMenuItem>
+
+            <NavigationMenuItem>
+              <NavigationMenuTrigger>Earnings</NavigationMenuTrigger>
+              <NavigationMenuContent className="bg-white p-4 rounded-md shadow-lg min-w-[200px]">
+                <div className="grid gap-2">
+                  <Link 
+                    to="/dashboard/earnings" 
+                    className="text-sm hover:bg-gray-100 p-2 rounded-md"
+                  >
+                    My Earnings
+                  </Link>
+                  <Link 
+                    to="/dashboard/payouts" 
+                    className="text-sm hover:bg-gray-100 p-2 rounded-md"
+                  >
+                    Payouts
+                  </Link>
+                  <Link 
+                    to="/dashboard/affiliate" 
+                    className="text-sm hover:bg-gray-100 p-2 rounded-md"
+                  >
+                    Affiliate Program
+                  </Link>
+                </div>
+              </NavigationMenuContent>
+            </NavigationMenuItem>
+
+            <NavigationMenuItem>
+              <Link to="/apply" className="text-sm font-medium hover:text-primary px-4 py-2">
+                Apply Now
+              </Link>
+            </NavigationMenuItem>
+          </NavigationMenuList>
+        </NavigationMenu>
         
         <div className="flex items-center gap-4">
           {user ? (
@@ -60,7 +118,7 @@ export function Navbar() {
                     <AvatarFallback>{user.email?.[0].toUpperCase() || 'U'}</AvatarFallback>
                   </Avatar>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
+                <DropdownMenuContent align="end" className="bg-white">
                   <DropdownMenuLabel>My Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onSelect={() => navigate('/dashboard/profile')}>

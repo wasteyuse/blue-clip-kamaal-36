@@ -67,7 +67,7 @@ function App() {
         <Route path="payouts" element={<PayoutsPage />} />
       </Route>
       
-      {/* Admin routes - Changed to use AdminLayout */}
+      {/* Admin routes - Using AdminLayout with Outlet */}
       <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<AdminPanelPage />} />
         <Route path="dashboard" element={<AdminDashboard />} />

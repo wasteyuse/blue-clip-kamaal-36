@@ -1,4 +1,3 @@
-
 import { Routes, Route } from 'react-router-dom';
 import { MainLayout } from "@/components/layout/MainLayout";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -15,6 +14,14 @@ import AdminPanelPage from '@/pages/AdminPanelPage';
 import AffiliatePage from '@/pages/AffiliatePage';
 import PayoutsPage from '@/pages/PayoutsPage';
 import NotFound from '@/pages/NotFound';
+import HowItWorksPage from '@/pages/HowItWorksPage';
+import CreatorsPage from '@/pages/CreatorsPage';
+import FAQPage from '@/pages/FAQPage';
+import GuidelinesPage from '@/pages/GuidelinesPage';
+import PayoutRulesPage from '@/pages/PayoutRulesPage';
+import AboutPage from '@/pages/AboutPage';
+import PrivacyPage from '@/pages/PrivacyPage';
+import TermsPage from '@/pages/TermsPage';
 
 function App() {
   return (
@@ -23,6 +30,14 @@ function App() {
       <Route element={<MainLayout />}>
         <Route path="/" element={<HomePage />} />
         <Route path="/apply" element={<ApplyPage />} />
+        <Route path="/how-it-works" element={<HowItWorksPage />} />
+        <Route path="/creators" element={<CreatorsPage />} />
+        <Route path="/faq" element={<FAQPage />} />
+        <Route path="/guidelines" element={<GuidelinesPage />} />
+        <Route path="/payout-rules" element={<PayoutRulesPage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
       </Route>
       
       {/* Authentication routes */}

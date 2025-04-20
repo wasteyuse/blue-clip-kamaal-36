@@ -1,5 +1,3 @@
-
-import { useAdminGuard } from "@/utils/isAdminGuard";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -11,7 +9,6 @@ import { PreviewDialog } from "@/components/admin/PreviewDialog";
 import { SearchFilter } from "@/components/admin/SearchFilter";
 
 export default function ApprovalsPage() {
-  const { isAdmin, isLoading } = useAdminGuard();
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isTableLoading, setIsTableLoading] = useState(true);
@@ -20,10 +17,8 @@ export default function ApprovalsPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (isAdmin) {
-      fetchSubmissions();
-    }
-  }, [isAdmin]);
+    fetchSubmissions();
+  }, []);
 
   async function fetchSubmissions() {
     setIsTableLoading(true);
@@ -104,8 +99,6 @@ export default function ApprovalsPage() {
         submission.status?.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : submissions;
-
-  if (isLoading || !isAdmin) return <div className="flex justify-center p-8">Loading...</div>;
 
   return (
     <div className="container mx-auto px-4 py-8">

@@ -1,5 +1,3 @@
-
-import { useAdminGuard } from "@/utils/isAdminGuard";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -11,17 +9,14 @@ import { DollarSign, CheckCircle, XCircle } from "lucide-react";
 import { format } from "date-fns";
 
 export default function PayoutsPage() {
-  const { isAdmin, isLoading } = useAdminGuard();
   const [payouts, setPayouts] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isTableLoading, setIsTableLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    if (isAdmin) {
-      fetchPayouts();
-    }
-  }, [isAdmin]);
+    fetchPayouts();
+  }, []);
 
   async function fetchPayouts() {
     setIsTableLoading(true);
@@ -103,8 +98,6 @@ export default function PayoutsPage() {
         payout.id.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : payouts;
-
-  if (isLoading || !isAdmin) return <div className="flex justify-center p-8">Loading...</div>;
 
   return (
     <div className="container mx-auto px-4 py-8">

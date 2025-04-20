@@ -1,5 +1,3 @@
-
-import { useAdminGuard } from "@/utils/isAdminGuard";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -28,7 +26,6 @@ import {
 import { addAsset } from "@/lib/api";
 
 export default function AssetsPage() {
-  const { isAdmin, isLoading } = useAdminGuard();
   const [assets, setAssets] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isTableLoading, setIsTableLoading] = useState(true);
@@ -43,10 +40,8 @@ export default function AssetsPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    if (isAdmin) {
-      fetchAssets();
-    }
-  }, [isAdmin]);
+    fetchAssets();
+  }, []);
 
   async function fetchAssets() {
     setIsTableLoading(true);

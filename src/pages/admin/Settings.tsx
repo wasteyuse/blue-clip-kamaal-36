@@ -1,5 +1,3 @@
-
-import { useAdminGuard } from "@/utils/isAdminGuard";
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,7 +16,6 @@ import {
 } from "@/components/ui/select";
 
 export default function PaymentSettingsPage() {
-  const { isAdmin, isLoading } = useAdminGuard();
   const { toast } = useToast();
   
   // Payment method settings
@@ -57,8 +54,6 @@ export default function PaymentSettingsPage() {
       });
     }, 1000);
   };
-
-  if (isLoading || !isAdmin) return <div className="flex justify-center p-8">Loading...</div>;
 
   return (
     <div className="container mx-auto px-4 py-8">

@@ -1,5 +1,3 @@
-
-import { useAdminGuard } from "@/utils/isAdminGuard";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +10,6 @@ import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 
 export default function EarningsPage() {
-  const { isAdmin, isLoading } = useAdminGuard();
   const [userEarnings, setUserEarnings] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isTableLoading, setIsTableLoading] = useState(true);
@@ -25,10 +22,8 @@ export default function EarningsPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (isAdmin) {
-      fetchEarningsData();
-    }
-  }, [isAdmin]);
+    fetchEarningsData();
+  }, []);
 
   async function fetchEarningsData() {
     setIsTableLoading(true);
@@ -86,8 +81,6 @@ export default function EarningsPage() {
         user.id.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : userEarnings;
-
-  if (isLoading || !isAdmin) return <div className="flex justify-center p-8">Loading...</div>;
 
   return (
     <div className="container mx-auto px-4 py-8">

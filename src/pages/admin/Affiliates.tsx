@@ -1,5 +1,3 @@
-
-import { useAdminGuard } from "@/utils/isAdminGuard";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -11,7 +9,6 @@ import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function AffiliatesPage() {
-  const { isAdmin, isLoading } = useAdminGuard();
   const [affiliateLinks, setAffiliateLinks] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isTableLoading, setIsTableLoading] = useState(true);
@@ -24,10 +21,8 @@ export default function AffiliatesPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (isAdmin) {
-      fetchAffiliateLinks();
-    }
-  }, [isAdmin]);
+    fetchAffiliateLinks();
+  }, []);
 
   async function fetchAffiliateLinks() {
     setIsTableLoading(true);
@@ -79,8 +74,6 @@ export default function AffiliatesPage() {
         link.content_url?.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : affiliateLinks;
-
-  if (isLoading || !isAdmin) return <div className="flex justify-center p-8">Loading...</div>;
 
   return (
     <div className="container mx-auto px-4 py-8">

@@ -1,5 +1,3 @@
-
-import { useAdminGuard } from "@/utils/isAdminGuard";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -10,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { Users } from "lucide-react";
 
 export default function UsersPage() {
-  const { isAdmin, isLoading } = useAdminGuard();
   const [users, setUsers] = useState<any[]>([]);
   const [admins, setAdmins] = useState<Record<string, boolean>>({});
   const [searchTerm, setSearchTerm] = useState("");
@@ -18,11 +15,9 @@ export default function UsersPage() {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (isAdmin) {
-      fetchUsers();
-      fetchAdmins();
-    }
-  }, [isAdmin]);
+    fetchUsers();
+    fetchAdmins();
+  }, []);
 
   async function fetchUsers() {
     setIsTableLoading(true);
@@ -143,8 +138,6 @@ export default function UsersPage() {
         user.id.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : users;
-
-  if (isLoading || !isAdmin) return <div className="flex justify-center p-8">Loading...</div>;
 
   return (
     <div className="container mx-auto px-4 py-8">

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -144,8 +145,6 @@ export default function AssetsPage() {
         asset.description?.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : assets;
-
-  if (isLoading || !isAdmin) return <div className="flex justify-center p-8">Loading...</div>;
 
   return (
     <div className="container mx-auto px-4 py-8">

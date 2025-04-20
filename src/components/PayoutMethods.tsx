@@ -39,13 +39,17 @@ export function PayoutMethods() {
   const { data: payoutMethods, refetch } = useQuery({
     queryKey: ['payoutMethods', user?.id],
     queryFn: async () => {
+      // Use type assertion to handle the table that's not in the type definitions
       const { data, error } = await supabase
         .from('payout_methods')
         .select('*')
         .eq('user_id', user?.id)
-        .order('is_default', { ascending: false });
+        .order('is_default', { ascending: false }) as any;
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching payout methods:", error);
+        throw error;
+      }
       return data as PayoutMethod[];
     },
     enabled: !!user
@@ -54,15 +58,17 @@ export function PayoutMethods() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // Use type assertion to handle the table that's not in the type definitions
       const { error } = await supabase
         .from('payout_methods')
         .insert([
           {
+            user_id: user?.id,
             method_type: methodType,
             details,
             is_default: !payoutMethods?.length, // Make default if first method
           }
-        ]);
+        ]) as any;
 
       if (error) throw error;
       
@@ -82,13 +88,13 @@ export function PayoutMethods() {
       await supabase
         .from('payout_methods')
         .update({ is_default: false })
-        .eq('user_id', user?.id);
+        .eq('user_id', user?.id) as any;
 
       // Then set the selected method as default
       const { error } = await supabase
         .from('payout_methods')
         .update({ is_default: true })
-        .eq('id', methodId);
+        .eq('id', methodId) as any;
 
       if (error) throw error;
       
@@ -151,13 +157,13 @@ export function PayoutMethods() {
         </Dialog>
       </div>
 
-      {payoutMethods?.length === 0 ? (
+      {!payoutMethods || payoutMethods.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground">
           No payout methods added yet
         </div>
       ) : (
         <div className="space-y-2">
-          {payoutMethods?.map((method) => (
+          {payoutMethods.map((method) => (
             <div
               key={method.id}
               className="flex items-center justify-between p-4 rounded-lg border"

@@ -11,7 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 export default function PayoutsPage() {
   const { user } = useAuth();
 
-  const { data: profileData, isLoading } = useQuery({
+  const { data: profileData, isLoading: isProfileLoading } = useQuery({
     queryKey: ['userProfile', user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -26,7 +26,22 @@ export default function PayoutsPage() {
     enabled: !!user
   });
 
-  if (isLoading) return <div>Loading...</div>;
+  const { data: payoutsData, isLoading: isPayoutsLoading, refetch: refetchPayouts } = useQuery({
+    queryKey: ['payoutHistory', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('payouts')
+        .select('*')
+        .eq('user_id', user?.id)
+        .order('requested_at', { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user
+  });
+
+  if (isProfileLoading || isPayoutsLoading) return <div>Loading...</div>;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -50,7 +65,7 @@ export default function PayoutsPage() {
           <CardContent>
             <PayoutRequestForm 
               availableAmount={profileData?.total_earnings || 0} 
-              onSuccess={() => {}} 
+              onSuccess={() => refetchPayouts()} 
             />
           </CardContent>
         </Card>
@@ -71,7 +86,7 @@ export default function PayoutsPage() {
             <CardTitle>Payout History</CardTitle>
           </CardHeader>
           <CardContent>
-            <PayoutHistory payouts={[]} />
+            <PayoutHistory payouts={payoutsData || []} />
           </CardContent>
         </Card>
       </div>

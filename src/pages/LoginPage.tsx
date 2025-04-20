@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -45,31 +44,15 @@ export default function LoginPage() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      const { error, data } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email: values.email,
         password: values.password,
       });
 
       if (error) throw error;
 
-      // Check if the user is an admin
-      const { data: adminData, error: adminError } = await supabase
-        .from('admins')
-        .select('id')
-        .eq('user_id', data.user.id)
-        .single();
-
-      if (adminError && adminError.code !== 'PGRST116') { // Not found error is okay
-        throw adminError;
-      }
-
-      // Redirect to admin dashboard if user is an admin
-      if (adminData) {
-        navigate('/admin/dashboard');
-      } else {
-        // Regular user redirect
-        navigate('/dashboard');
-      }
+      // Redirect to dashboard
+      navigate('/dashboard');
 
     } catch (error) {
       toast({

@@ -1,15 +1,9 @@
 
-import { useAdminGuard } from "@/utils/isAdminGuard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Link } from "react-router-dom";
 import { Users, TrendingUp, Check, DollarSign, Handshake, Package, Settings } from "lucide-react";
 
 export default function AdminDashboard() {
-  const { isAdmin, isLoading } = useAdminGuard();
-
-  if (isLoading) return <div className="flex justify-center p-8">Loading admin dashboard...</div>;
-  if (!isAdmin) return null;
-
   const adminModules = [
     {
       title: "User Management",

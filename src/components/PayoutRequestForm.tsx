@@ -22,6 +22,16 @@ interface PayoutMethod {
   is_default: boolean;
 }
 
+// Define extended payout type that includes payment_method
+interface PayoutWithMethod {
+  id: string;
+  user_id?: string;
+  amount?: number;
+  status?: string;
+  requested_at: string;
+  payment_method?: string;
+}
+
 export function PayoutRequestForm({ availableAmount, onSuccess }: PayoutRequestFormProps) {
   const { user } = useAuth();
   const [amount, setAmount] = useState("");
@@ -35,7 +45,7 @@ export function PayoutRequestForm({ availableAmount, onSuccess }: PayoutRequestF
       const { data, error } = await supabase.from('payouts')
         .select('*')
         .eq('user_id', user?.id)
-        .is('payment_method', 'not.null');
+        .is('payment_method', 'not.null') as { data: PayoutWithMethod[] | null, error: any };
 
       if (error) throw error;
       
@@ -108,7 +118,7 @@ export function PayoutRequestForm({ availableAmount, onSuccess }: PayoutRequestF
           amount: numAmount,
           status: "pending",
           payment_method: selectedMethod ? `${selectedMethod.method_type}: ${selectedMethod.details}` : undefined
-        }]);
+        }] as any);
 
       if (error) throw error;
       

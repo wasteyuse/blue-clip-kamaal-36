@@ -32,6 +32,16 @@ interface PayoutMethod {
   is_default: boolean;
 }
 
+// Define extended payout type that includes payment_method
+interface PayoutWithMethod {
+  id: string;
+  user_id?: string;
+  amount?: number;
+  status?: string;
+  requested_at: string;
+  payment_method?: string;
+}
+
 export function PayoutMethods() {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
@@ -45,7 +55,7 @@ export function PayoutMethods() {
       const { data, error } = await supabase.from('payouts')
         .select('*')
         .eq('user_id', user?.id)
-        .is('payment_method', 'not.null');
+        .is('payment_method', 'not.null') as { data: PayoutWithMethod[] | null, error: any };
 
       if (error) {
         console.error("Error fetching payout methods:", error);
@@ -95,7 +105,7 @@ export function PayoutMethods() {
           amount: 0, // Use 0 to indicate this is a template
           status: "template",
           payment_method: `${methodType}: ${details}`
-        }]);
+        }] as any);
 
       if (error) throw error;
       
@@ -125,7 +135,7 @@ export function PayoutMethods() {
             amount: 0,
             status: "template",
             payment_method: `${selectedMethod.method_type}: ${selectedMethod.details}`
-          }]);
+          }] as any);
           
         if (error) throw error;
       }

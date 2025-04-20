@@ -51,11 +51,11 @@ export function PayoutMethods() {
   const { data: payoutMethods, refetch } = useQuery({
     queryKey: ['payoutMethods', user?.id],
     queryFn: async () => {
-      // Use a raw SQL query to get payout methods
+      // Use a raw query to get payout records and cast as any to bypass type checking
       const { data, error } = await supabase.from('payouts')
         .select('*')
         .eq('user_id', user?.id)
-        .is('payment_method', 'not.null') as { data: PayoutWithMethod[] | null, error: any };
+        .eq('status', 'template') as { data: any[] | null, error: any };
 
       if (error) {
         console.error("Error fetching payout methods:", error);

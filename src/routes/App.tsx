@@ -2,6 +2,7 @@
 import { Routes, Route } from 'react-router-dom';
 import { MainLayout } from "@/components/layout/MainLayout";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
+import { AdminLayout } from "@/components/admin/AdminLayout";
 import HomePage from '@/pages/HomePage';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
@@ -66,8 +67,8 @@ function App() {
         <Route path="payouts" element={<PayoutsPage />} />
       </Route>
       
-      {/* Admin routes */}
-      <Route path="/admin" element={<DashboardLayout />}>
+      {/* Admin routes - Changed to use AdminLayout */}
+      <Route path="/admin" element={<AdminLayout />}>
         <Route index element={<AdminPanelPage />} />
         <Route path="dashboard" element={<AdminDashboard />} />
         <Route path="users" element={<UsersPage />} />

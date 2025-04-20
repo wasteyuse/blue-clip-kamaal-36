@@ -1,4 +1,3 @@
-
 import { useAdminGuard } from "@/utils/isAdminGuard";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -219,7 +218,7 @@ export default function ApprovalsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredSubmissions.length > a3a70 ? (
+              {filteredSubmissions.length > 0 ? (
                 filteredSubmissions.map((submission) => (
                   <TableRow key={submission.id}>
                     <TableCell className="font-medium">{submission.profiles?.name || 'Unknown Creator'}</TableCell>

@@ -17,45 +17,36 @@ export function AdminNavbar() {
   const location = useLocation();
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <nav className="sticky top-0 z-50 w-full bg-blue-800 text-white shadow-md">
       <div className="container flex h-14 items-center">
-        <div className="mr-4 hidden md:flex">
-          <Link to="/admin/dashboard" className="mr-6 flex items-center space-x-2">
+        <div className="flex items-center gap-6">
+          <Link to="/admin/dashboard" className="flex items-center space-x-2">
             <Settings className="h-6 w-6" />
             <span className="hidden font-bold sm:inline-block">
               Admin Panel
             </span>
           </Link>
-          <nav className="flex items-center space-x-6 text-sm font-medium">
+          <nav className="hidden md:flex items-center space-x-6 text-sm">
             {adminLinks.map((link) => (
               <Link
                 key={link.path}
                 to={link.path}
                 className={cn(
-                  "transition-colors hover:text-foreground/80",
+                  "flex items-center gap-2 transition-colors hover:text-blue-200",
                   location.pathname === link.path 
-                    ? "text-foreground font-semibold" 
-                    : "text-foreground/60"
+                    ? "text-white font-semibold" 
+                    : "text-blue-100"
                 )}
               >
-                <span className="hidden md:flex items-center gap-2">
-                  <link.icon className="h-4 w-4" />
-                  {link.title}
-                </span>
-                <link.icon className="h-4 w-4 md:hidden" />
+                <link.icon className="h-4 w-4" />
+                <span>{link.title}</span>
               </Link>
             ))}
           </nav>
         </div>
         
         {/* Mobile Menu */}
-        <div className="flex md:hidden">
-          <nav className="flex items-center">
-            <Link to="/admin/dashboard" className="mr-6 flex items-center space-x-2">
-              <Settings className="h-6 w-6" />
-              <span className="font-bold">Admin</span>
-            </Link>
-          </nav>
+        <div className="flex md:hidden ml-auto">
           <nav className="flex overflow-auto pb-2">
             {adminLinks.map((link) => (
               <Link
@@ -63,13 +54,13 @@ export function AdminNavbar() {
                 to={link.path}
                 className={cn(
                   "flex items-center px-4",
-                  "transition-colors hover:text-foreground/80",
+                  "transition-colors hover:text-blue-200",
                   location.pathname === link.path 
-                    ? "text-foreground font-semibold" 
-                    : "text-foreground/60"
+                    ? "text-white" 
+                    : "text-blue-100"
                 )}
               >
-                <link.icon className="h-4 w-4" />
+                <link.icon className="h-5 w-5" />
               </Link>
             ))}
           </nav>
@@ -78,4 +69,3 @@ export function AdminNavbar() {
     </nav>
   );
 }
-

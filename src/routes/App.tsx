@@ -1,3 +1,4 @@
+
 import { Routes, Route } from 'react-router-dom';
 import { MainLayout } from "@/components/layout/MainLayout";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -22,6 +23,16 @@ import PayoutRulesPage from '@/pages/PayoutRulesPage';
 import AboutPage from '@/pages/AboutPage';
 import PrivacyPage from '@/pages/PrivacyPage';
 import TermsPage from '@/pages/TermsPage';
+
+// Admin pages
+import AdminDashboard from '@/pages/admin/AdminDashboard';
+import UsersPage from '@/pages/admin/Users';
+import AdminAssetsPage from '@/pages/admin/Assets';
+import AdminPayoutsPage from '@/pages/admin/Payouts';
+import ApprovalsPage from '@/pages/admin/Approvals';
+import AffiliatesPage from '@/pages/admin/Affiliates';
+import PaymentSettingsPage from '@/pages/admin/Settings';
+import EarningsPage from '@/pages/admin/Earnings';
 
 function App() {
   return (
@@ -58,6 +69,14 @@ function App() {
       {/* Admin routes */}
       <Route path="/admin" element={<DashboardLayout />}>
         <Route index element={<AdminPanelPage />} />
+        <Route path="dashboard" element={<AdminDashboard />} />
+        <Route path="users" element={<UsersPage />} />
+        <Route path="assets" element={<AdminAssetsPage />} />
+        <Route path="payouts" element={<AdminPayoutsPage />} />
+        <Route path="approvals" element={<ApprovalsPage />} />
+        <Route path="affiliates" element={<AffiliatesPage />} />
+        <Route path="settings" element={<PaymentSettingsPage />} />
+        <Route path="earnings" element={<EarningsPage />} />
       </Route>
       
       {/* Catch-all route */}

@@ -12,6 +12,8 @@ import AssetsPage from '@/pages/AssetsPage';
 import SubmitContentPage from '@/pages/SubmitContentPage';
 import MyEarningsPage from '@/pages/MyEarningsPage';
 import AdminPanelPage from '@/pages/AdminPanelPage';
+import AffiliatePage from '@/pages/AffiliatePage';
+import PayoutsPage from '@/pages/PayoutsPage';
 import NotFound from '@/pages/NotFound';
 
 function App() {
@@ -34,6 +36,8 @@ function App() {
         <Route path="submit" element={<SubmitContentPage />} />
         <Route path="earnings" element={<MyEarningsPage />} />
         <Route path="assets" element={<AssetsPage />} />
+        <Route path="affiliate" element={<AffiliatePage />} />
+        <Route path="payouts" element={<PayoutsPage />} />
       </Route>
       
       {/* Admin routes */}

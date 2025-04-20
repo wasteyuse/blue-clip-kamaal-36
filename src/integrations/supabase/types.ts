@@ -95,6 +95,8 @@ export type Database = {
       }
       submissions: {
         Row: {
+          affiliate_clicks: number | null
+          affiliate_conversions: number | null
           affiliate_link: string | null
           asset_used: string | null
           content_url: string | null
@@ -107,6 +109,8 @@ export type Database = {
           views: number | null
         }
         Insert: {
+          affiliate_clicks?: number | null
+          affiliate_conversions?: number | null
           affiliate_link?: string | null
           asset_used?: string | null
           content_url?: string | null
@@ -119,6 +123,8 @@ export type Database = {
           views?: number | null
         }
         Update: {
+          affiliate_clicks?: number | null
+          affiliate_conversions?: number | null
           affiliate_link?: string | null
           asset_used?: string | null
           content_url?: string | null
@@ -137,6 +143,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      increment_affiliate_click: {
+        Args: { sub_id: string }
+        Returns: undefined
+      }
+      increment_affiliate_conversion: {
+        Args: { sub_id: string }
+        Returns: undefined
+      }
       increment_user_earnings: {
         Args: { user_id_param: string; amount_param: number }
         Returns: undefined

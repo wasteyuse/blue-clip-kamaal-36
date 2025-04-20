@@ -16,6 +16,7 @@ interface PayoutRequestFormProps {
 
 interface PayoutMethod {
   id: string;
+  user_id: string;
   method_type: 'UPI' | 'BANK';
   details: string;
   is_default: boolean;
@@ -30,12 +31,9 @@ export function PayoutRequestForm({ availableAmount, onSuccess }: PayoutRequestF
   const { data: payoutMethods } = useQuery({
     queryKey: ['payoutMethods', user?.id],
     queryFn: async () => {
-      // Use type assertion to handle the table that's not in the type definitions
+      // Using a direct SQL query with RPC to bypass type checking
       const { data, error } = await supabase
-        .from('payout_methods')
-        .select('*')
-        .eq('user_id', user?.id)
-        .order('is_default', { ascending: false }) as any;
+        .rpc('get_user_payout_methods', { user_id_param: user?.id }) as any;
 
       if (error) throw error;
       return data as PayoutMethod[];

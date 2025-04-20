@@ -23,8 +23,10 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 
+// Define the PayoutMethod interface
 interface PayoutMethod {
   id: string;
+  user_id: string;
   method_type: 'UPI' | 'BANK';
   details: string;
   is_default: boolean;
@@ -39,12 +41,9 @@ export function PayoutMethods() {
   const { data: payoutMethods, refetch } = useQuery({
     queryKey: ['payoutMethods', user?.id],
     queryFn: async () => {
-      // Use type assertion to handle the table that's not in the type definitions
+      // Using a direct SQL query with RPC to bypass type checking
       const { data, error } = await supabase
-        .from('payout_methods')
-        .select('*')
-        .eq('user_id', user?.id)
-        .order('is_default', { ascending: false }) as any;
+        .rpc('get_user_payout_methods', { user_id_param: user?.id }) as any;
 
       if (error) {
         console.error("Error fetching payout methods:", error);
@@ -58,17 +57,14 @@ export function PayoutMethods() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      // Use type assertion to handle the table that's not in the type definitions
+      // Using a direct SQL query with RPC to bypass type checking
       const { error } = await supabase
-        .from('payout_methods')
-        .insert([
-          {
-            user_id: user?.id,
-            method_type: methodType,
-            details,
-            is_default: !payoutMethods?.length, // Make default if first method
-          }
-        ]) as any;
+        .rpc('add_payout_method', {
+          user_id_param: user?.id,
+          method_type_param: methodType,
+          details_param: details,
+          is_default_param: !payoutMethods?.length
+        }) as any;
 
       if (error) throw error;
       
@@ -84,17 +80,12 @@ export function PayoutMethods() {
 
   const setDefaultMethod = async (methodId: string) => {
     try {
-      // First, set all methods to non-default
-      await supabase
-        .from('payout_methods')
-        .update({ is_default: false })
-        .eq('user_id', user?.id) as any;
-
-      // Then set the selected method as default
+      // Using a direct SQL query with RPC to bypass type checking
       const { error } = await supabase
-        .from('payout_methods')
-        .update({ is_default: true })
-        .eq('id', methodId) as any;
+        .rpc('set_default_payout_method', {
+          user_id_param: user?.id,
+          method_id_param: methodId
+        }) as any;
 
       if (error) throw error;
       

@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -5,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { Users } from "lucide-react";
+import { Users, Check, X, Ban } from "lucide-react";
 
 export default function UsersPage() {
   const [users, setUsers] = useState<any[]>([]);
@@ -132,6 +133,34 @@ export default function UsersPage() {
     }
   }
 
+  async function toggleBanStatus(userId: string, isBanned: boolean = false) {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ banned: !isBanned })
+        .eq('id', userId);
+
+      if (error) throw error;
+      
+      // Update local state
+      setUsers(users.map(user => 
+        user.id === userId ? { ...user, banned: !isBanned } : user
+      ));
+      
+      toast({
+        title: "Success",
+        description: `User ${!isBanned ? 'banned' : 'unbanned'} successfully`,
+      });
+    } catch (error) {
+      console.error('Error updating ban status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update user ban status",
+        variant: "destructive",
+      });
+    }
+  }
+
   const filteredUsers = searchTerm
     ? users.filter(user => 
         user.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -169,6 +198,7 @@ export default function UsersPage() {
                 <TableHead>User ID</TableHead>
                 <TableHead>Creator</TableHead>
                 <TableHead>Admin</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>Earnings</TableHead>
                 <TableHead>Views</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -194,6 +224,13 @@ export default function UsersPage() {
                         <Badge variant="outline" className="bg-gray-100">No</Badge>
                       )}
                     </TableCell>
+                    <TableCell>
+                      {user.banned ? (
+                        <Badge variant="destructive">Banned</Badge>
+                      ) : (
+                        <Badge variant="outline" className="bg-green-100 text-green-800">Active</Badge>
+                      )}
+                    </TableCell>
                     <TableCell>₹{user.total_earnings?.toFixed(2) || '0.00'}</TableCell>
                     <TableCell>{user.total_views || 0}</TableCell>
                     <TableCell className="text-right">
@@ -213,13 +250,31 @@ export default function UsersPage() {
                         >
                           {admins[user.id] ? 'Remove Admin' : 'Make Admin'}
                         </Button>
+                        
+                        <Button 
+                          variant={user.banned ? "outline" : "destructive"} 
+                          size="sm"
+                          onClick={() => toggleBanStatus(user.id, user.banned)}
+                        >
+                          {user.banned ? (
+                            <>
+                              <Check className="h-4 w-4 mr-1" />
+                              Unban
+                            </>
+                          ) : (
+                            <>
+                              <Ban className="h-4 w-4 mr-1" />
+                              Ban
+                            </>
+                          )}
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-4">
+                  <TableCell colSpan={8} className="text-center py-4">
                     No users found
                   </TableCell>
                 </TableRow>

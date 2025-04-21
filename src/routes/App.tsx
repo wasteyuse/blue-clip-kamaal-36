@@ -1,4 +1,3 @@
-
 import { Routes, Route } from 'react-router-dom';
 import { MainLayout } from "@/components/layout/MainLayout";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";

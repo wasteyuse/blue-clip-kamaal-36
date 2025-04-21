@@ -32,14 +32,20 @@ export default function UserSettings() {
     const fetchProfile = async () => {
       if (!user) return;
       setProfileLoading(true);
+      
+      console.log("Fetching profile for user ID:", user.id);
+      
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", user.id)
         .single();
+      
       if (error) {
+        console.error("Error fetching profile:", error);
         toast.error("Failed to load profile");
       } else if (data) {
+        console.log("Profile data fetched:", data);
         setProfile({
           id: data.id,
           name: data.name || "",
@@ -47,12 +53,27 @@ export default function UserSettings() {
           payout_upi: data.payout_upi || "",
           payout_bank: data.payout_bank || "",
         });
+      } else {
+        console.log("No profile data found, creating default profile");
+        // If no profile exists, create a default one
+        setProfile({
+          id: user.id,
+          name: user.email?.split('@')[0] || "",
+          bio: "",
+          payout_upi: "",
+          payout_bank: "",
+        });
       }
+      
       setProfileLoading(false);
     };
 
-    if (user?.email) setEmail(user.email);
-    fetchProfile();
+    if (user?.email) {
+      setEmail(user.email);
+      fetchProfile();
+    } else {
+      console.log("No user found or user not fully loaded:", user);
+    }
   }, [user]);
 
   const handleProfileChange = (field: keyof Profile, value: string) => {

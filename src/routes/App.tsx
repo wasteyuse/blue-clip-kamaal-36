@@ -1,3 +1,4 @@
+
 import { Routes, Route } from 'react-router-dom';
 import { MainLayout } from "@/components/layout/MainLayout";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -23,6 +24,7 @@ import PayoutRulesPage from '@/pages/PayoutRulesPage';
 import AboutPage from '@/pages/AboutPage';
 import PrivacyPage from '@/pages/PrivacyPage';
 import TermsPage from '@/pages/TermsPage';
+import UserSettings from '@/components/UserSettings';
 
 // Admin pages
 import AdminDashboard from '@/pages/admin/AdminDashboard';

@@ -1,6 +1,6 @@
 
 import { Link, useLocation } from "react-router-dom";
-import { Settings, Users, Package, Check, DollarSign, Handshake, LayoutDashboard } from "lucide-react";
+import { Settings, Users, Package, Check, DollarSign, Handshake, LayoutDashboard, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const adminLinks = [
@@ -9,6 +9,7 @@ const adminLinks = [
   { title: 'Assets', path: '/admin/assets', icon: Package },
   { title: 'Approvals', path: '/admin/approvals', icon: Check },
   { title: 'Payouts', path: '/admin/payouts', icon: DollarSign },
+  { title: 'Transactions', path: '/admin/transactions', icon: FileText },
   { title: 'Affiliates', path: '/admin/affiliates', icon: Handshake },
   { title: 'Settings', path: '/admin/settings', icon: Settings },
 ];

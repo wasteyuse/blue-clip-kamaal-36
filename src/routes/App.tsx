@@ -34,6 +34,7 @@ import ApprovalsPage from '@/pages/admin/Approvals';
 import AffiliatesPage from '@/pages/admin/Affiliates';
 import PaymentSettingsPage from '@/pages/admin/Settings';
 import EarningsPage from '@/pages/admin/Earnings';
+import TransactionsPage from '@/pages/admin/Transactions';
 
 function App() {
   return (
@@ -79,6 +80,7 @@ function App() {
         <Route path="affiliates" element={<AffiliatesPage />} />
         <Route path="settings" element={<PaymentSettingsPage />} />
         <Route path="earnings" element={<EarningsPage />} />
+        <Route path="transactions" element={<TransactionsPage />} />
       </Route>
       
       {/* Catch-all route */}

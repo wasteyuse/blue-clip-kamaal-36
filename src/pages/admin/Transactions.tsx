@@ -29,7 +29,7 @@ interface Transaction {
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterType, setFilterType] = useState<TransactionType | ''>('');
+  const [filterType, setFilterType] = useState<TransactionType | 'all'>('all');
   const [searchUser, setSearchUser] = useState('');
   const { toast } = useToast();
 
@@ -40,7 +40,7 @@ export default function TransactionsPage() {
       .select('*, profiles(name)')
       .order('created_at', { ascending: false });
 
-    if (filterType) query = query.eq('type', filterType);
+    if (filterType !== 'all') query = query.eq('type', filterType);
     if (searchUser) query = query.ilike('profiles.name', `%${searchUser}%`);
 
     const { data, error } = await query;
@@ -108,12 +108,12 @@ export default function TransactionsPage() {
           onChange={(e) => setSearchUser(e.target.value)}
           className="max-w-md"
         />
-        <Select value={filterType} onValueChange={(val: TransactionType | '') => setFilterType(val)}>
+        <Select value={filterType} onValueChange={(val: TransactionType | 'all') => setFilterType(val)}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Transaction Type" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Types</SelectItem>
+            <SelectItem value="all">All Types</SelectItem>
             <SelectItem value="earning">Earnings</SelectItem>
             <SelectItem value="affiliate">Affiliate</SelectItem>
             <SelectItem value="payout">Payout</SelectItem>

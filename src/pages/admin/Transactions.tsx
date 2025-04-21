@@ -1,17 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
-import { Badge } from "@/components/ui/badge";
-import { FileDown } from "lucide-react";
-import { TransactionsChart } from "@/components/admin/transactions/TransactionsChart";
 import { Transaction, TransactionType, TransactionStatus } from "@/types/transactions";
-import { isSuspiciousTransaction, formatTransactionForExport } from "@/utils/transactionUtils";
+import { TransactionHeader } from "@/components/admin/transactions/TransactionHeader";
+import { TransactionFilters } from "@/components/admin/transactions/TransactionFilters";
+import { TransactionTable } from "@/components/admin/transactions/TransactionTable";
+import { TransactionsChart } from "@/components/admin/transactions/TransactionsChart";
 
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -73,141 +68,21 @@ export default function TransactionsPage() {
     }
   };
 
-  const getStatusBadgeVariant = (status: TransactionStatus) => {
-    switch(status) {
-      case 'pending': return 'outline';
-      case 'approved': return 'secondary';
-      case 'paid': return 'default';
-      case 'failed': return 'destructive';
-    }
-  };
-
-  const handleExport = () => {
-    const csvContent = transactions.map(formatTransactionForExport);
-    const csvString = csvContent
-      .map(row => Object.values(row).join(','))
-      .join('\n');
-    
-    const blob = new Blob([csvString], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.setAttribute('hidden', '');
-    a.setAttribute('href', url);
-    a.setAttribute('download', 'transactions.csv');
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  };
-
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">💸 Admin Transactions</h1>
-        <Button onClick={handleExport} variant="outline">
-          <FileDown className="mr-2" />
-          Export CSV
-        </Button>
-      </div>
-      
+      <TransactionHeader transactions={transactions} />
       <TransactionsChart transactions={transactions} />
-      
-      <div className="flex flex-wrap gap-4 mb-6">
-        <Input
-          placeholder="Search by name"
-          value={searchUser}
-          onChange={(e) => setSearchUser(e.target.value)}
-          className="max-w-md"
-        />
-        <Select value={filterType} onValueChange={(val: TransactionType | 'all') => setFilterType(val)}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Transaction Type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="earning">Earnings</SelectItem>
-            <SelectItem value="affiliate">Affiliate</SelectItem>
-            <SelectItem value="payout">Payout</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="border rounded-md overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>User ID</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Amount</TableHead>
-              <TableHead>Source</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Created</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              <TableRow>
-                <TableCell colSpan={8} className="text-center">Loading...</TableCell>
-              </TableRow>
-            ) : transactions.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={8} className="text-center">No transactions found</TableCell>
-              </TableRow>
-            ) : (
-              transactions.map((transaction) => (
-                <TableRow 
-                  key={transaction.id}
-                  className={isSuspiciousTransaction(transaction) ? 'bg-red-50 hover:bg-red-100' : ''}
-                >
-                  <TableCell>{transaction.user_id}</TableCell>
-                  <TableCell>
-                    {transaction.profiles?.name || 'Unknown'}
-                    {isSuspiciousTransaction(transaction) && (
-                      <Badge variant="destructive" className="ml-2">
-                        🚨 Suspicious
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="capitalize">{transaction.type}</TableCell>
-                  <TableCell>₹{transaction.amount.toFixed(2)}</TableCell>
-                  <TableCell>{transaction.source || '-'}</TableCell>
-                  <TableCell>
-                    <Badge variant={getStatusBadgeVariant(transaction.status)}>
-                      {transaction.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {format(new Date(transaction.created_at), 'PPP')}
-                  </TableCell>
-                  <TableCell>
-                    {transaction.status !== 'paid' && (
-                      <div className="flex gap-2">
-                        {transaction.status === 'pending' && (
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => updateStatus(transaction.id, 'approved')}
-                          >
-                            Approve
-                          </Button>
-                        )}
-                        <Button 
-                          variant="secondary" 
-                          size="sm"
-                          onClick={() => updateStatus(transaction.id, 'paid')}
-                        >
-                          Mark Paid
-                        </Button>
-                      </div>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+      <TransactionFilters
+        searchUser={searchUser}
+        setSearchUser={setSearchUser}
+        filterType={filterType}
+        setFilterType={setFilterType}
+      />
+      <TransactionTable
+        transactions={transactions}
+        loading={loading}
+        onUpdateStatus={updateStatus}
+      />
     </div>
   );
 }

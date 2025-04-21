@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -37,7 +37,7 @@ export default function UserSettings() {
         .from("profiles")
         .select("*")
         .eq("id", user.id)
-        .maybeSingle();
+        .single();
       if (error) {
         toast.error("Failed to load profile");
       } else if (data) {
@@ -177,7 +177,7 @@ export default function UserSettings() {
       </div>
 
       <div className="rounded-lg border bg-white p-6 mb-8 space-y-5">
-        <h3 className="text-xl font-semibold mb-3">🔐 Account Security</h3>
+        <h3 className="text-xl font-semibold">🔐 Account Security</h3>
         <div>
           <Label htmlFor="email">Email</Label>
           <Input

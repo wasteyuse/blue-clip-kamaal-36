@@ -14,14 +14,16 @@ export type PayoutRequest = {
 };
 
 export function usePayoutRequests(status: string = "pending") {
-  const [payouts, setPayouts] = useState<PayoutRequest[]>([]);
+  const [payoutRequests, setPayoutRequests] = useState<PayoutRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const { toast } = useToast();
 
   async function fetchPayoutRequests() {
     setIsLoading(true);
+    setError(null);
     try {
-      const { data, error } = await supabase
+      const { data, error: fetchError } = await supabase
         .from("payout_requests")
         .select(`
           id,
@@ -34,7 +36,7 @@ export function usePayoutRequests(status: string = "pending") {
         .eq("status", status)
         .order("requested_at", { ascending: false });
 
-      if (error) throw error;
+      if (fetchError) throw fetchError;
 
       if (data && data.length > 0) {
         const payoutsWithWallets = await Promise.all(
@@ -56,11 +58,13 @@ export function usePayoutRequests(status: string = "pending") {
             return { ...payout, wallets };
           })
         );
-        setPayouts(payoutsWithWallets);
+        setPayoutRequests(payoutsWithWallets);
       } else {
-        setPayouts([]);
+        setPayoutRequests([]);
       }
     } catch (e) {
+      const error = e as Error;
+      setError(error);
       toast({
         title: "Error",
         description: "Failed to load payout requests",
@@ -71,11 +75,34 @@ export function usePayoutRequests(status: string = "pending") {
     }
   }
 
+  async function approveOrReject(payout: PayoutRequest, newStatus: "approved" | "rejected") {
+    try {
+      const { error: updateError } = await supabase
+        .from("payout_requests")
+        .update({ status: newStatus })
+        .eq("id", payout.id);
+
+      if (updateError) throw updateError;
+
+      // Refresh the list after updating
+      await fetchPayoutRequests();
+      
+      return true;
+    } catch (e) {
+      const error = e as Error;
+      toast({
+        title: "Error",
+        description: `Failed to ${newStatus} payout: ${error.message}`,
+        variant: "destructive",
+      });
+      throw e;
+    }
+  }
+
   useEffect(() => {
     fetchPayoutRequests();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
-  return { payouts, isLoading, fetchPayoutRequests };
+  return { payoutRequests, isLoading, error, approveOrReject, fetchPayoutRequests };
 }
-

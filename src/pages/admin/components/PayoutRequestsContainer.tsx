@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { usePayoutRequests } from "../hooks/usePayoutRequests";
 import { PayoutRequestsTable } from "./PayoutRequestsTable";
 import { useToast } from "@/hooks/use-toast";

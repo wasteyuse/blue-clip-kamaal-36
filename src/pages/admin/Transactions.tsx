@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -11,23 +12,6 @@ import { FileDown } from "lucide-react";
 import { TransactionsChart } from "@/components/admin/transactions/TransactionsChart";
 import { Transaction, TransactionType, TransactionStatus } from "@/types/transactions";
 import { isSuspiciousTransaction, formatTransactionForExport } from "@/utils/transactionUtils";
-
-type TransactionType = 'earning' | 'affiliate' | 'payout';
-type TransactionStatus = 'pending' | 'approved' | 'paid' | 'failed';
-
-interface Transaction {
-  id: string;
-  user_id: string;
-  type: TransactionType;
-  amount: number;
-  source?: string;
-  status: TransactionStatus;
-  created_at: string;
-  updated_at: string;
-  profiles?: {
-    name?: string;
-  };
-}
 
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);

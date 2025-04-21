@@ -14,7 +14,7 @@ type PayoutRequest = {
   status: string;
   requested_at: string;
   profiles: { name: string; email?: string } | null;
-  wallet: { balance: number } | null;
+  wallets: { balance: number } | null;
 };
 
 export default function AdminPayoutsPage() {
@@ -37,7 +37,7 @@ export default function AdminPayoutsPage() {
           profiles:user_id (
             name
           ),
-          wallet:user_id (
+          wallets:user_id (
             balance
           )
         `)
@@ -123,7 +123,7 @@ export default function AdminPayoutsPage() {
                 <TableRow key={p.id}>
                   <TableCell className="font-bold">{p.profiles?.name || p.user_id}</TableCell>
                   <TableCell>
-                    ₹{typeof p.wallet?.balance === "number" ? Number(p.wallet.balance).toFixed(2) : "0.00"}
+                    ₹{typeof p.wallets?.balance === "number" ? Number(p.wallets.balance).toFixed(2) : "0.00"}
                   </TableCell>
                   <TableCell>₹{Number(p.amount).toFixed(2)}</TableCell>
                   <TableCell>

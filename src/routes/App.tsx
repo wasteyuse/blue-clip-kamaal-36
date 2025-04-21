@@ -1,4 +1,3 @@
-
 import { Routes, Route } from 'react-router-dom';
 import { MainLayout } from "@/components/layout/MainLayout";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
@@ -65,6 +64,7 @@ function App() {
         <Route path="assets" element={<AssetsPage />} />
         <Route path="affiliate" element={<AffiliatePage />} />
         <Route path="payouts" element={<PayoutsPage />} />
+        <Route path="settings" element={<UserSettings />} />
       </Route>
       
       {/* Admin routes - Using AdminLayout with Outlet */}

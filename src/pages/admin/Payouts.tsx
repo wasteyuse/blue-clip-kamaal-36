@@ -38,14 +38,34 @@ export default function AdminPayoutsPage() {
           amount,
           status,
           requested_at,
-          profiles:profiles(name),
-          wallets(balance)
+          profiles:profiles(name)
         `)
         .eq("status", "pending")
         .order("requested_at", { ascending: false });
 
       if (error) throw error;
-      setPayouts(data || []);
+
+      // If we have data, fetch the wallet balances separately
+      if (data && data.length > 0) {
+        const payoutsWithWallets = await Promise.all(
+          data.map(async (payout) => {
+            // Get wallet for each user
+            const { data: walletData, error: walletError } = await supabase
+              .from("wallets")
+              .select("balance")
+              .eq("user_id", payout.user_id)
+              .single();
+
+            return {
+              ...payout,
+              wallets: walletError ? null : walletData
+            };
+          })
+        );
+        setPayouts(payoutsWithWallets);
+      } else {
+        setPayouts([]);
+      }
     } catch (e) {
       toast({
         title: "Error",

@@ -21,8 +21,7 @@ interface Transaction {
   status: TransactionStatus;
   created_at: string;
   updated_at: string;
-  users?: {
-    email: string;
+  profiles?: {
     name?: string;
   };
 }
@@ -38,11 +37,11 @@ export default function TransactionsPage() {
     setLoading(true);
     let query = supabase
       .from('transactions')
-      .select('*, users:user_id(email, name)')
+      .select('*, profiles(name)')
       .order('created_at', { ascending: false });
 
     if (filterType) query = query.eq('type', filterType);
-    if (searchUser) query = query.ilike('users.email', `%${searchUser}%`);
+    if (searchUser) query = query.ilike('profiles.name', `%${searchUser}%`);
 
     const { data, error } = await query;
 
@@ -104,7 +103,7 @@ export default function TransactionsPage() {
       
       <div className="flex flex-wrap gap-4 mb-6">
         <Input
-          placeholder="Search by email"
+          placeholder="Search by name"
           value={searchUser}
           onChange={(e) => setSearchUser(e.target.value)}
           className="max-w-md"
@@ -126,7 +125,8 @@ export default function TransactionsPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>User</TableHead>
+              <TableHead>User ID</TableHead>
+              <TableHead>Name</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Amount</TableHead>
               <TableHead>Source</TableHead>
@@ -138,16 +138,17 @@ export default function TransactionsPage() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center">Loading...</TableCell>
+                <TableCell colSpan={8} className="text-center">Loading...</TableCell>
               </TableRow>
             ) : transactions.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center">No transactions found</TableCell>
+                <TableCell colSpan={8} className="text-center">No transactions found</TableCell>
               </TableRow>
             ) : (
               transactions.map((transaction) => (
                 <TableRow key={transaction.id}>
-                  <TableCell>{transaction.users?.email || 'Unknown'}</TableCell>
+                  <TableCell>{transaction.user_id}</TableCell>
+                  <TableCell>{transaction.profiles?.name || 'Unknown'}</TableCell>
                   <TableCell className="capitalize">{transaction.type}</TableCell>
                   <TableCell>₹{transaction.amount.toFixed(2)}</TableCell>
                   <TableCell>{transaction.source || '-'}</TableCell>

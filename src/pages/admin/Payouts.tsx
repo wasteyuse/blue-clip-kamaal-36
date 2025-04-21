@@ -33,13 +33,13 @@ export default function AdminPayoutsPage() {
       const { data, error } = await supabase
         .from("payout_requests")
         .select(`
-          *,
-          profiles:user_id (
-            name
-          ),
-          wallets:user_id (
-            balance
-          )
+          id,
+          user_id,
+          amount,
+          status,
+          requested_at,
+          profiles:profiles(name),
+          wallets(balance)
         `)
         .eq("status", "pending")
         .order("requested_at", { ascending: false });

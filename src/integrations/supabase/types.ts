@@ -109,31 +109,40 @@ export type Database = {
       }
       profiles: {
         Row: {
+          bio: string | null
           created_at: string
           id: string
           is_approved: boolean | null
           is_creator: boolean | null
           name: string | null
+          payout_bank: string | null
+          payout_upi: string | null
           total_earnings: number | null
           total_views: number | null
           updated_at: string
         }
         Insert: {
+          bio?: string | null
           created_at?: string
           id: string
           is_approved?: boolean | null
           is_creator?: boolean | null
           name?: string | null
+          payout_bank?: string | null
+          payout_upi?: string | null
           total_earnings?: number | null
           total_views?: number | null
           updated_at?: string
         }
         Update: {
+          bio?: string | null
           created_at?: string
           id?: string
           is_approved?: boolean | null
           is_creator?: boolean | null
           name?: string | null
+          payout_bank?: string | null
+          payout_upi?: string | null
           total_earnings?: number | null
           total_views?: number | null
           updated_at?: string

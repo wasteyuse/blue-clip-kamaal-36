@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -8,6 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 import { Badge } from "@/components/ui/badge";
+import { FileDown } from "lucide-react";
+import { TransactionsChart } from "@/components/admin/transactions/TransactionsChart";
+import { Transaction, TransactionType, TransactionStatus } from "@/types/transactions";
+import { isSuspiciousTransaction, formatTransactionForExport } from "@/utils/transactionUtils";
 
 type TransactionType = 'earning' | 'affiliate' | 'payout';
 type TransactionStatus = 'pending' | 'approved' | 'paid' | 'failed';
@@ -95,11 +98,34 @@ export default function TransactionsPage() {
     }
   };
 
+  const handleExport = () => {
+    const csvContent = transactions.map(formatTransactionForExport);
+    const csvString = csvContent
+      .map(row => Object.values(row).join(','))
+      .join('\n');
+    
+    const blob = new Blob([csvString], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.setAttribute('hidden', '');
+    a.setAttribute('href', url);
+    a.setAttribute('download', 'transactions.csv');
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">💸 Admin Transactions</h1>
+        <Button onClick={handleExport} variant="outline">
+          <FileDown className="mr-2" />
+          Export CSV
+        </Button>
       </div>
+      
+      <TransactionsChart transactions={transactions} />
       
       <div className="flex flex-wrap gap-4 mb-6">
         <Input
@@ -146,9 +172,19 @@ export default function TransactionsPage() {
               </TableRow>
             ) : (
               transactions.map((transaction) => (
-                <TableRow key={transaction.id}>
+                <TableRow 
+                  key={transaction.id}
+                  className={isSuspiciousTransaction(transaction) ? 'bg-red-50 hover:bg-red-100' : ''}
+                >
                   <TableCell>{transaction.user_id}</TableCell>
-                  <TableCell>{transaction.profiles?.name || 'Unknown'}</TableCell>
+                  <TableCell>
+                    {transaction.profiles?.name || 'Unknown'}
+                    {isSuspiciousTransaction(transaction) && (
+                      <Badge variant="destructive" className="ml-2">
+                        🚨 Suspicious
+                      </Badge>
+                    )}
+                  </TableCell>
                   <TableCell className="capitalize">{transaction.type}</TableCell>
                   <TableCell>₹{transaction.amount.toFixed(2)}</TableCell>
                   <TableCell>{transaction.source || '-'}</TableCell>

@@ -35,7 +35,7 @@ export default function AdminPayoutsPage() {
         .select(`
           *,
           profiles:user_id (
-            name, email
+            name
           ),
           wallet:user_id (
             balance
@@ -111,7 +111,6 @@ export default function AdminPayoutsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>User</TableHead>
-                <TableHead>Email</TableHead>
                 <TableHead>Wallet Balance</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Date Requested</TableHead>
@@ -123,7 +122,6 @@ export default function AdminPayoutsPage() {
               {payouts.map((p) => (
                 <TableRow key={p.id}>
                   <TableCell className="font-bold">{p.profiles?.name || p.user_id}</TableCell>
-                  <TableCell>{p.profiles?.email || "–"}</TableCell>
                   <TableCell>
                     ₹{typeof p.wallet?.balance === "number" ? Number(p.wallet.balance).toFixed(2) : "0.00"}
                   </TableCell>

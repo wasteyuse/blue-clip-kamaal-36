@@ -1,14 +1,13 @@
-
 import { useEffect, useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { ProfileSection } from "./settings/ProfileSection";
+import { PayoutSection } from "./settings/PayoutSection";
+import { SecuritySection } from "./settings/SecuritySection";
 
-interface Profile {
+export interface Profile {
   id: string;
   name: string;
   bio?: string;
@@ -28,7 +27,6 @@ export default function UserSettings() {
   const [password, setPassword] = useState("");
   const [passwordSaving, setPasswordSaving] = useState(false);
 
-  // Fetch user profile from "profiles" table
   useEffect(() => {
     const fetchProfile = async () => {
       if (!user) return;
@@ -125,106 +123,33 @@ export default function UserSettings() {
         <span>⚙️ User Settings</span>
       </h2>
 
-      <div className="rounded-lg border bg-white p-6 mb-8 space-y-5">
-        <div>
-          <Label htmlFor="username">Username</Label>
-          <Input
-            id="username"
-            value={profile?.name ?? ""}
-            onChange={(e) => handleProfileChange("name", e.target.value)}
-            className="mt-1"
-            disabled={profileLoading}
-          />
-        </div>
-        <div>
-          <Label htmlFor="bio">Bio</Label>
-          <Input
-            id="bio"
-            value={profile?.bio ?? ""}
-            onChange={(e) => handleProfileChange("bio", e.target.value)}
-            className="mt-1"
-            disabled={profileLoading}
-          />
-        </div>
-        <div>
-          <Label htmlFor="payout_upi">UPI ID</Label>
-          <Input
-            id="payout_upi"
-            placeholder="yourname@upi"
-            value={profile?.payout_upi ?? ""}
-            onChange={(e) => handleProfileChange("payout_upi", e.target.value)}
-            className="mt-1"
-            disabled={profileLoading}
-          />
-        </div>
-        <div>
-          <Label htmlFor="payout_bank">Bank Info (optional)</Label>
-          <Input
-            id="payout_bank"
-            placeholder="IFSC, Account No"
-            value={profile?.payout_bank ?? ""}
-            onChange={(e) => handleProfileChange("payout_bank", e.target.value)}
-            className="mt-1"
-            disabled={profileLoading}
-          />
-        </div>
-        <Button
-          onClick={handleSaveProfile}
-          disabled={saving || profileLoading}
-        >
-          {saving ? "Saving..." : "💾 Save Profile"}
-        </Button>
-      </div>
+      <ProfileSection
+        profile={profile}
+        profileLoading={profileLoading}
+        saving={saving}
+        onProfileChange={handleProfileChange}
+        onSave={handleSaveProfile}
+      />
 
-      <div className="rounded-lg border bg-white p-6 mb-8 space-y-5">
-        <h3 className="text-xl font-semibold">🔐 Account Security</h3>
-        <div>
-          <Label htmlFor="email">Email</Label>
-          <Input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="mt-1"
-            disabled={emailSaving}
-          />
-          <Button
-            className="mt-2"
-            variant="secondary"
-            onClick={handleUpdateEmail}
-            disabled={emailSaving}
-          >
-            {emailSaving ? "Updating..." : "Update Email"}
-          </Button>
-        </div>
-        <div>
-          <Label htmlFor="password">New Password</Label>
-          <Input
-            id="password"
-            type="password"
-            value={password}
-            autoComplete="new-password"
-            onChange={(e) => setPassword(e.target.value)}
-            className="mt-1"
-            disabled={passwordSaving}
-          />
-          <Button
-            className="mt-2"
-            variant="secondary"
-            onClick={handleUpdatePassword}
-            disabled={passwordSaving || !password}
-          >
-            {passwordSaving ? "Updating..." : "Change Password"}
-          </Button>
-        </div>
-        <Button
-          className="mt-6"
-          variant="destructive"
-          onClick={handleLogout}
-        >
-          🚪 Logout
-        </Button>
-      </div>
+      <PayoutSection
+        profile={profile}
+        profileLoading={profileLoading}
+        saving={saving}
+        onProfileChange={handleProfileChange}
+        onSave={handleSaveProfile}
+      />
+
+      <SecuritySection
+        email={email}
+        password={password}
+        emailSaving={emailSaving}
+        passwordSaving={passwordSaving}
+        onEmailChange={setEmail}
+        onPasswordChange={setPassword}
+        onUpdateEmail={handleUpdateEmail}
+        onUpdatePassword={handleUpdatePassword}
+        onLogout={handleLogout}
+      />
     </div>
   );
 }

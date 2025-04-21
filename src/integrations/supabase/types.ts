@@ -114,6 +114,8 @@ export type Database = {
           id: string
           is_approved: boolean | null
           is_creator: boolean | null
+          kyc_doc_url: string | null
+          kyc_status: string | null
           name: string | null
           payout_bank: string | null
           payout_upi: string | null
@@ -127,6 +129,8 @@ export type Database = {
           id: string
           is_approved?: boolean | null
           is_creator?: boolean | null
+          kyc_doc_url?: string | null
+          kyc_status?: string | null
           name?: string | null
           payout_bank?: string | null
           payout_upi?: string | null
@@ -140,6 +144,8 @@ export type Database = {
           id?: string
           is_approved?: boolean | null
           is_creator?: boolean | null
+          kyc_doc_url?: string | null
+          kyc_status?: string | null
           name?: string | null
           payout_bank?: string | null
           payout_upi?: string | null

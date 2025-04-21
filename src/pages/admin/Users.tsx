@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Users } from "lucide-react";
 import { UserTable } from "@/components/admin/UserTable";
+import { KycBadge } from "@/components/admin/KycBadge";
+import { KycDocLink } from "@/components/admin/KycDocLink";
 
 export default function UsersPage() {
   const [users, setUsers] = useState<any[]>([]);
@@ -153,12 +155,73 @@ export default function UsersPage() {
     }
   }
 
+  async function updateKycStatus(userId: string, status: 'approved' | 'rejected') {
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ kyc_status: status })
+        .eq('id', userId);
+
+      if (error) throw error;
+      
+      await fetchUsers();
+      
+      toast({
+        title: "Success",
+        description: `KYC status updated to ${status}`,
+      });
+    } catch (error) {
+      console.error('Error updating KYC status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update KYC status",
+        variant: "destructive",
+      });
+    }
+  }
+
   const filteredUsers = searchTerm
     ? users.filter(user => 
         user.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
         user.id.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : users;
+
+  const columns = [
+    {
+      header: "Name",
+      cell: (user: any) => user.name || "Anonymous"
+    },
+    {
+      header: "KYC Document",
+      cell: (user: any) => <KycDocLink url={user.kyc_doc_url} />
+    },
+    {
+      header: "KYC Status",
+      cell: (user: any) => <KycBadge status={user.kyc_status || 'pending'} />
+    },
+    {
+      header: "Actions",
+      cell: (user: any) => (
+        <div className="flex gap-2">
+          <Button 
+            variant="default" 
+            size="sm"
+            onClick={() => updateKycStatus(user.id, 'approved')}
+          >
+            Approve
+          </Button>
+          <Button 
+            variant="destructive" 
+            size="sm"
+            onClick={() => updateKycStatus(user.id, 'rejected')}
+          >
+            Reject
+          </Button>
+        </div>
+      )
+    }
+  ];
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -167,7 +230,7 @@ export default function UsersPage() {
           <Users className="h-6 w-6 text-blue-500" />
           <h1 className="text-3xl font-bold">User Management</h1>
         </div>
-        <Button onClick={() => { fetchUsers(); fetchAdmins(); }} variant="outline">Refresh</Button>
+        <Button onClick={fetchUsers} variant="outline">Refresh</Button>
       </div>
       
       <div className="mb-6">
@@ -186,6 +249,7 @@ export default function UsersPage() {
         onToggleCreator={toggleCreatorStatus}
         onToggleAdmin={toggleAdminStatus}
         onToggleBan={toggleBanStatus}
+        columns={columns}
       />
     </div>
   );

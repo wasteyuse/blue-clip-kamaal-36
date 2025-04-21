@@ -12,6 +12,13 @@ interface User {
   banned?: boolean;
   total_earnings?: number;
   total_views?: number;
+  kyc_status?: 'pending' | 'approved' | 'rejected';
+  kyc_doc_url?: string | null;
+}
+
+interface Column {
+  header: string;
+  cell: (user: User) => React.ReactNode;
 }
 
 interface UserTableProps {
@@ -21,6 +28,7 @@ interface UserTableProps {
   onToggleCreator: (userId: string, status: boolean) => Promise<void>;
   onToggleAdmin: (userId: string, isAdmin: boolean) => Promise<void>;
   onToggleBan: (userId: string, isBanned: boolean) => Promise<void>;
+  columns?: Column[];
 }
 
 export function UserTable({ 
@@ -29,7 +37,8 @@ export function UserTable({
   isLoading,
   onToggleCreator,
   onToggleAdmin,
-  onToggleBan
+  onToggleBan,
+  columns = []
 }: UserTableProps) {
   if (users.length === 0 && !isLoading) {
     return (
@@ -46,14 +55,12 @@ export function UserTable({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>User ID</TableHead>
-            <TableHead>Creator</TableHead>
-            <TableHead>Admin</TableHead>
+            {columns.map((column, index) => (
+              <TableHead key={index}>{column.header}</TableHead>
+            ))}
+            <TableHead>Role</TableHead>
             <TableHead>Status</TableHead>
-            <TableHead>Earnings</TableHead>
-            <TableHead>Views</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
+            <TableHead>Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -62,27 +69,22 @@ export function UserTable({
           ) : (
             users.map((user) => (
               <TableRow key={user.id}>
-                <TableCell className="font-medium">{user.name || 'Anonymous'}</TableCell>
-                <TableCell className="text-xs text-gray-500">{user.id}</TableCell>
+                {columns.map((column, index) => (
+                  <TableCell key={index}>{column.cell(user)}</TableCell>
+                ))}
                 <TableCell>
-                  {user.is_creator ? (
-                    <Badge variant="success" className="bg-green-100 text-green-800">Yes</Badge>
-                  ) : (
-                    <Badge variant="outline" className="bg-gray-100">No</Badge>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {admins[user.id] ? (
-                    <Badge variant="success" className="bg-blue-100 text-blue-800">Yes</Badge>
-                  ) : (
-                    <Badge variant="outline" className="bg-gray-100">No</Badge>
-                  )}
+                  <div className="flex gap-2">
+                    {user.is_creator && (
+                      <Badge variant="secondary">Creator</Badge>
+                    )}
+                    {admins[user.id] && (
+                      <Badge variant="default">Admin</Badge>
+                    )}
+                  </div>
                 </TableCell>
                 <TableCell>
                   <UserStatusBadge banned={user.banned} />
                 </TableCell>
-                <TableCell>₹{user.total_earnings?.toFixed(2) || '0.00'}</TableCell>
-                <TableCell>{user.total_views || 0}</TableCell>
                 <TableCell>
                   <UserActions
                     userId={user.id}

@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -45,7 +44,6 @@ export default function AdminPayoutsPage() {
 
       if (error) throw error;
 
-      // If we have data, fetch the wallet balances separately
       if (data && data.length > 0) {
         const payoutsWithWallets = await Promise.all(
           data.map(async (payout) => {
@@ -54,11 +52,21 @@ export default function AdminPayoutsPage() {
               .from("wallets")
               .select("balance")
               .eq("user_id", payout.user_id)
-              .single();
+              .maybeSingle(); // Use maybeSingle() to avoid error when wallet not found
+
+            // Correctly handle the wallet property to fit type
+            let wallets: { balance: number } | null = null;
+            if (!walletError) {
+              if (walletData && typeof walletData.balance === "number") {
+                wallets = { balance: Number(walletData.balance) };
+              } else {
+                wallets = { balance: 0 }; // Default to 0 if wallet doesn't exist
+              }
+            } // on error, leave as null
 
             return {
               ...payout,
-              wallets: walletError ? null : walletData
+              wallets,
             };
           })
         );
@@ -143,7 +151,9 @@ export default function AdminPayoutsPage() {
                 <TableRow key={p.id}>
                   <TableCell className="font-bold">{p.profiles?.name || p.user_id}</TableCell>
                   <TableCell>
-                    ₹{typeof p.wallets?.balance === "number" ? Number(p.wallets.balance).toFixed(2) : "0.00"}
+                    ₹{typeof p.wallets?.balance === "number"
+                      ? Number(p.wallets.balance).toFixed(2)
+                      : "0.00"}
                   </TableCell>
                   <TableCell>₹{Number(p.amount).toFixed(2)}</TableCell>
                   <TableCell>

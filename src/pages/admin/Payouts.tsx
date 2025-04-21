@@ -1,131 +1,118 @@
-import { useState, useEffect } from "react";
+
+import React, { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { DollarSign, CheckCircle, XCircle } from "lucide-react";
-import { format } from "date-fns";
+import { Check, X } from "lucide-react";
 
-export default function PayoutsPage() {
-  const [payouts, setPayouts] = useState<any[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isTableLoading, setIsTableLoading] = useState(true);
+type PayoutRequest = {
+  id: string;
+  user_id: string;
+  amount: number;
+  status: string;
+  requested_at: string;
+  profiles: { name: string; email?: string } | null;
+  wallet: { balance: number } | null;
+};
+
+export default function AdminPayoutsPage() {
+  const [payouts, setPayouts] = useState<PayoutRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchPayouts();
+    fetchPayoutRequests();
   }, []);
 
-  async function fetchPayouts() {
-    setIsTableLoading(true);
+  async function fetchPayoutRequests() {
+    setIsLoading(true);
     try {
-      // Join payouts with profiles to get user names
+      // Get all pending requests & user info (profiles/wallet)
       const { data, error } = await supabase
-        .from('payouts')
+        .from("payout_requests")
         .select(`
           *,
           profiles:user_id (
-            name
+            name, email
+          ),
+          wallet:user_id (
+            balance
           )
         `)
-        .order('requested_at', { ascending: false });
+        .eq("status", "pending")
+        .order("requested_at", { ascending: false });
 
       if (error) throw error;
       setPayouts(data || []);
-    } catch (error) {
-      console.error('Error fetching payouts:', error);
+    } catch (e) {
       toast({
         title: "Error",
-        description: "Failed to load payouts data",
+        description: "Failed to load payout requests",
         variant: "destructive",
       });
     } finally {
-      setIsTableLoading(false);
+      setIsLoading(false);
     }
   }
 
-  async function updatePayoutStatus(payoutId: string, newStatus: string) {
+  async function handleAction(payout: PayoutRequest, status: "approved" | "rejected") {
     try {
-      const { error } = await supabase
-        .from('payouts')
-        .update({ status: newStatus })
-        .eq('id', payoutId);
+      if (status === "approved") {
+        // 1. Mark payout request as approved
+        const { error: updErr } = await supabase
+          .from("payout_requests")
+          .update({ status: "approved" })
+          .eq("id", payout.id);
+        if (updErr) throw updErr;
 
-      if (error) throw error;
-      
-      // Update local state
-      setPayouts(payouts.map(payout => 
-        payout.id === payoutId ? { ...payout, status: newStatus } : payout
-      ));
-      
-      toast({
-        title: "Success",
-        description: `Payout ${newStatus} successfully`,
-      });
-    } catch (error) {
-      console.error('Error updating payout:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update payout status",
-        variant: "destructive",
-      });
+        // 2. Deduct funds from wallet (call RPC)
+        const { error: rpcErr } = await supabase.rpc("deduct_wallet_balance", {
+          user_id: payout.user_id,
+          amount: payout.amount,
+        });
+        if (rpcErr) throw rpcErr;
+
+        // 3. Log the payout in wallet_transactions
+        const { error: logErr } = await supabase.from("wallet_transactions").insert([
+          {
+            user_id: payout.user_id,
+            type: "debit",
+            amount: payout.amount,
+            reason: "Payout approved",
+          },
+        ]);
+        if (logErr) throw logErr;
+
+        toast({ title: "Payout approved", description: `Payout of ₹${payout.amount} approved.` });
+      } else {
+        // Just mark as rejected
+        const { error } = await supabase.from("payout_requests").update({ status: "rejected" }).eq("id", payout.id);
+        if (error) throw error;
+        toast({ title: "Payout rejected", description: "Payout request was rejected." });
+      }
+      fetchPayoutRequests();
+    } catch (e: any) {
+      toast({ title: "Error processing payout", description: e?.message, variant: "destructive" });
     }
   }
-
-  const getStatusBadge = (status: string) => {
-    switch(status?.toLowerCase()) {
-      case 'approved':
-        return <Badge className="bg-green-100 text-green-800">Approved</Badge>;
-      case 'rejected':
-        return <Badge className="bg-red-100 text-red-800">Rejected</Badge>;
-      case 'pending':
-        return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
-      case 'processing':
-        return <Badge className="bg-blue-100 text-blue-800">Processing</Badge>;
-      case 'completed':
-        return <Badge className="bg-blue-100 text-blue-800">Completed</Badge>;
-      default:
-        return <Badge variant="outline">Unknown</Badge>;
-    }
-  };
-
-  const filteredPayouts = searchTerm
-    ? payouts.filter(payout => 
-        payout.profiles?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        payout.status?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        payout.id.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    : payouts;
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <DollarSign className="h-6 w-6 text-yellow-500" />
-          <h1 className="text-3xl font-bold">Payout Control</h1>
-        </div>
-        <Button onClick={fetchPayouts} variant="outline">Refresh</Button>
-      </div>
-      
-      <div className="mb-6">
-        <Input
-          placeholder="Search payouts by user, status, or ID..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-md"
-        />
-      </div>
-      
-      {isTableLoading ? (
-        <div className="text-center py-4">Loading payouts data...</div>
+      <h1 className="text-3xl font-bold mb-6 flex items-center gap-2">💸 Pending Payout Requests</h1>
+      {isLoading ? (
+        <div className="text-center py-4">Loading requests...</div>
+      ) : payouts.length === 0 ? (
+        <div className="text-center py-6 text-gray-500">No pending payout requests found.</div>
       ) : (
         <div className="border rounded-md overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>User</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Wallet Balance</TableHead>
                 <TableHead>Amount</TableHead>
                 <TableHead>Date Requested</TableHead>
                 <TableHead>Status</TableHead>
@@ -133,58 +120,40 @@ export default function PayoutsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredPayouts.length > 0 ? (
-                filteredPayouts.map((payout) => (
-                  <TableRow key={payout.id}>
-                    <TableCell className="font-medium">{payout.profiles?.name || 'Unknown User'}</TableCell>
-                    <TableCell>₹{payout.amount?.toFixed(2) || '0.00'}</TableCell>
-                    <TableCell>
-                      {payout.requested_at ? format(new Date(payout.requested_at), 'PPP') : 'Unknown'}
-                    </TableCell>
-                    <TableCell>{getStatusBadge(payout.status)}</TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        {payout.status === 'pending' && (
-                          <>
-                            <Button 
-                              variant="default" 
-                              size="sm"
-                              onClick={() => updatePayoutStatus(payout.id, 'approved')}
-                              className="bg-green-600 hover:bg-green-700"
-                            >
-                              <CheckCircle className="h-4 w-4 mr-1" />
-                              Approve
-                            </Button>
-                            <Button 
-                              variant="destructive" 
-                              size="sm"
-                              onClick={() => updatePayoutStatus(payout.id, 'rejected')}
-                            >
-                              <XCircle className="h-4 w-4 mr-1" />
-                              Reject
-                            </Button>
-                          </>
-                        )}
-                        {payout.status === 'approved' && (
-                          <Button 
-                            variant="default" 
-                            size="sm"
-                            onClick={() => updatePayoutStatus(payout.id, 'completed')}
-                          >
-                            Mark Completed
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-4">
-                    No payouts found
+              {payouts.map((p) => (
+                <TableRow key={p.id}>
+                  <TableCell className="font-bold">{p.profiles?.name || p.user_id}</TableCell>
+                  <TableCell>{p.profiles?.email || "–"}</TableCell>
+                  <TableCell>
+                    ₹{typeof p.wallet?.balance === "number" ? Number(p.wallet.balance).toFixed(2) : "0.00"}
+                  </TableCell>
+                  <TableCell>₹{Number(p.amount).toFixed(2)}</TableCell>
+                  <TableCell>
+                    {p.requested_at ? new Date(p.requested_at).toLocaleString() : "Unknown"}
+                  </TableCell>
+                  <TableCell>
+                    <Badge className="capitalize">{p.status}</Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex gap-2 justify-end">
+                      <Button
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700 text-white"
+                        onClick={() => handleAction(p, "approved")}
+                      >
+                        <Check className="h-4 w-4 mr-1" /> Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        className="bg-red-600 hover:bg-red-700 text-white"
+                        onClick={() => handleAction(p, "rejected")}
+                      >
+                        <X className="h-4 w-4 mr-1" /> Reject
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
-              )}
+              ))}
             </TableBody>
           </Table>
         </div>

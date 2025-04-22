@@ -1,10 +1,12 @@
-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { useNavigate } from "react-router-dom";
 
 export default function ContentPage() {
+  const navigate = useNavigate();
+  
   // Mock data - would come from Supabase in production
   const pendingContent = [
     { id: 1, title: "Yoga Basics for Beginners", submittedDate: "2023-04-15", status: "pending" },
@@ -36,7 +38,7 @@ export default function ContentPage() {
           <Button variant="secondary">Filter</Button>
           <Button variant="secondary">Sort</Button>
         </div>
-        <Button>
+        <Button onClick={() => navigate("/dashboard/submit")}>
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-plus mr-2"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
           Create New Content
         </Button>

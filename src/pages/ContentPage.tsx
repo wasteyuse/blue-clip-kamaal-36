@@ -23,6 +23,7 @@ type Submission = {
   affiliate_clicks?: number;
   affiliate_conversions?: number;
   affiliate_link?: string;
+  contentTitle?: string; // Add contentTitle property to the type
 };
 
 export default function ContentPage() {

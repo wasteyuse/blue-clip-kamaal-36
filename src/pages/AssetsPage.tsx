@@ -6,9 +6,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Eye, Download, FileType, Video, Image as ImageIcon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { PreviewDialog } from "@/components/assets/PreviewDialog";
 import { AssetFilters } from "@/components/assets/AssetFilters";
+import { Database } from "@/integrations/supabase/types";
+
+type WorkflowStatus = Database["public"]["Enums"]["workflow_status"];
 
 type Asset = {
   id: string;
@@ -17,7 +20,7 @@ type Asset = {
   file_url: string;
   description: string;
   category: string;
-  workflow_status: "draft" | "in_review" | "approved" | "rejected";
+  workflow_status: WorkflowStatus;
   created_at: string;
 };
 
@@ -26,7 +29,7 @@ export default function AssetsPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [category, setCategory] = useState("all");
-  const [status, setStatus] = useState("all");
+  const [status, setStatus] = useState<string>("all");
   const [previewAsset, setPreviewAsset] = useState<Asset | null>(null);
   const { toast } = useToast();
 
@@ -43,7 +46,10 @@ export default function AssetsPage() {
       }
       
       if (status !== "all") {
-        query = query.eq("workflow_status", status);
+        // Only apply the filter if it's not "all"
+        if (status === "draft" || status === "in_review" || status === "approved" || status === "rejected") {
+          query = query.eq("workflow_status", status as WorkflowStatus);
+        }
       }
 
       const { data, error } = await query.order("created_at", { ascending: false });
@@ -77,8 +83,8 @@ export default function AssetsPage() {
     }
   };
 
-  const getStatusBadge = (status: Asset["workflow_status"]) => {
-    const variants = {
+  const getStatusBadge = (status: WorkflowStatus) => {
+    const variants: Record<WorkflowStatus, "default" | "destructive" | "warning" | "success" | "secondary" | "outline" | "blue"> = {
       draft: "default",
       in_review: "warning",
       approved: "success",

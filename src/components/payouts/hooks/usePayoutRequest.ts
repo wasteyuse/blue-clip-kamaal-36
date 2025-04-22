@@ -4,12 +4,61 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { validateAmount } from "../utils/payoutValidation";
+import { useQuery } from "@tanstack/react-query";
+
+interface PayoutMethod {
+  id: string;
+  method_type: 'UPI' | 'BANK';
+  details: string;
+  is_default: boolean;
+}
 
 export const usePayoutRequest = (availableAmount: number, onSuccess: () => void) => {
   const { user } = useAuth();
   const [amount, setAmount] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedMethodId, setSelectedMethodId] = useState<string>("");
+
+  // Fetch payout methods
+  const { data: payoutMethods } = useQuery({
+    queryKey: ['payoutMethods', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('payouts')
+        .select('*')
+        .eq('user_id', user?.id)
+        .eq('status', 'template') as { data: any[] | null, error: any };
+
+      if (error) throw error;
+      
+      const methods: PayoutMethod[] = [];
+      if (data && data.length > 0) {
+        const uniqueMethods = new Map<string, PayoutMethod>();
+        
+        data.forEach(payout => {
+          if (payout.payment_method) {
+            const [type, details] = payout.payment_method.split(': ');
+            if (type && details) {
+              const methodKey = `${type}:${details}`;
+              if (!uniqueMethods.has(methodKey)) {
+                uniqueMethods.set(methodKey, {
+                  id: payout.id,
+                  user_id: payout.user_id || '',
+                  method_type: type as 'UPI' | 'BANK',
+                  details: details,
+                  is_default: uniqueMethods.size === 0
+                });
+              }
+            }
+          }
+        });
+        
+        return Array.from(uniqueMethods.values());
+      }
+      
+      return methods;
+    },
+    enabled: !!user
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,6 +107,7 @@ export const usePayoutRequest = (availableAmount: number, onSuccess: () => void)
     isSubmitting,
     selectedMethodId,
     setSelectedMethodId,
-    handleSubmit
+    handleSubmit,
+    payoutMethods
   };
 };

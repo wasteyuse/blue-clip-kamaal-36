@@ -3,21 +3,13 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { usePayoutRequest } from "./payouts/hooks/usePayoutRequest";
 import { PayoutMethodSelect } from "./payouts/PayoutMethodSelect";
-import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 interface PayoutRequestFormProps {
   availableAmount: number;
   onSuccess: () => void;
-}
-
-interface PayoutMethod {
-  id: string;
-  user_id: string;
-  method_type: 'UPI' | 'BANK';
-  details: string;
-  is_default: boolean;
 }
 
 export function PayoutRequestForm({ availableAmount, onSuccess }: PayoutRequestFormProps) {
@@ -28,48 +20,9 @@ export function PayoutRequestForm({ availableAmount, onSuccess }: PayoutRequestF
     isSubmitting,
     selectedMethodId,
     setSelectedMethodId,
-    handleSubmit
+    handleSubmit,
+    payoutMethods
   } = usePayoutRequest(availableAmount, onSuccess);
-
-  const { data: payoutMethods } = useQuery({
-    queryKey: ['payoutMethods', user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase.from('payouts')
-        .select('*')
-        .eq('user_id', user?.id)
-        .eq('status', 'template') as { data: any[] | null, error: any };
-
-      if (error) throw error;
-      
-      const methods: PayoutMethod[] = [];
-      if (data && data.length > 0) {
-        const uniqueMethods = new Map<string, PayoutMethod>();
-        
-        data.forEach(payout => {
-          if (payout.payment_method) {
-            const [type, details] = payout.payment_method.split(': ');
-            if (type && details) {
-              const methodKey = `${type}:${details}`;
-              if (!uniqueMethods.has(methodKey)) {
-                uniqueMethods.set(methodKey, {
-                  id: payout.id,
-                  user_id: payout.user_id || '',
-                  method_type: type as 'UPI' | 'BANK',
-                  details: details,
-                  is_default: uniqueMethods.size === 0
-                });
-              }
-            }
-          }
-        });
-        
-        return Array.from(uniqueMethods.values());
-      }
-      
-      return methods;
-    },
-    enabled: !!user
-  });
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">

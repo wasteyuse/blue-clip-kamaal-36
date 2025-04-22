@@ -1,37 +1,103 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Users } from "lucide-react";
 import { UserTable } from "@/components/admin/UserTable";
 import { KycBadge } from "@/components/admin/KycBadge";
 import { KycDocLink } from "@/components/admin/KycDocLink";
 import { KYCVerificationDialog } from "@/components/admin/KYCVerificationDialog";
+import { UserSearchFilter } from "@/components/admin/UserSearchFilter";
+
+// Constants
+const USERS_PER_PAGE = 10;
 
 export default function UsersPage() {
+  // State for users and pagination
   const [users, setUsers] = useState<any[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
   const [admins, setAdmins] = useState<Record<string, boolean>>({});
-  const [searchTerm, setSearchTerm] = useState("");
   const [isTableLoading, setIsTableLoading] = useState(true);
-  const { toast } = useToast();
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  
+  // State for filters
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filters, setFilters] = useState({
+    status: "all",
+    kyc: "all",
+    role: "all"
+  });
+  
+  // State for KYC verification
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [verificationDialogOpen, setVerificationDialogOpen] = useState(false);
+  
+  const { toast } = useToast();
 
+  // Initial data fetch
   useEffect(() => {
-    fetchUsers();
     fetchAdmins();
   }, []);
+
+  // Fetch users with filters applied
+  useEffect(() => {
+    fetchUsers();
+  }, [page, searchTerm, filters]);
+
+  // Apply filters to users
+  useEffect(() => {
+    if (users.length > 0) {
+      applyFilters();
+    }
+  }, [users, searchTerm, filters]);
 
   async function fetchUsers() {
     setIsTableLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*');
-
+      let query = supabase.from('profiles').select('*', { count: 'exact' });
+      
+      // Apply search if provided
+      if (searchTerm) {
+        query = query.or(`name.ilike.%${searchTerm}%,id.ilike.%${searchTerm}%`);
+      }
+      
+      // Apply KYC filter
+      if (filters.kyc !== 'all') {
+        query = query.eq('kyc_status', filters.kyc);
+      }
+      
+      // Apply role filter
+      if (filters.role === 'creator') {
+        query = query.eq('is_creator', true);
+      } else if (filters.role === 'admin') {
+        // This will be handled after fetching
+      }
+      
+      // Apply status filter
+      if (filters.status === 'banned') {
+        query = query.eq('banned', true);
+      } else if (filters.status === 'active') {
+        query = query.eq('banned', false);
+      }
+      
+      // Apply pagination
+      const from = (page - 1) * USERS_PER_PAGE;
+      const to = from + USERS_PER_PAGE - 1;
+      
+      const { data, count, error } = await query
+        .range(from, to)
+        .order('created_at', { ascending: false });
+      
       if (error) throw error;
+      
       setUsers(data || []);
+      if (count !== null) {
+        setTotalCount(count);
+        setTotalPages(Math.ceil(count / USERS_PER_PAGE));
+      }
     } catch (error) {
       console.error('Error fetching users:', error);
       toast({
@@ -66,6 +132,19 @@ export default function UsersPage() {
         variant: "destructive",
       });
     }
+  }
+
+  function applyFilters() {
+    let result = [...users];
+    
+    // Filter admins (can only be done client-side since it's from a different table)
+    if (filters.role === 'admin') {
+      result = result.filter(user => admins[user.id]);
+    } else if (filters.role === 'user') {
+      result = result.filter(user => !admins[user.id] && !user.is_creator);
+    }
+    
+    setFilteredUsers(result);
   }
 
   async function toggleCreatorStatus(userId: string, currentStatus: boolean) {
@@ -135,7 +214,7 @@ export default function UsersPage() {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ is_creator: isBanned })
+        .update({ banned: !isBanned })
         .eq('id', userId);
 
       if (error) throw error;
@@ -158,37 +237,24 @@ export default function UsersPage() {
     }
   }
 
-  async function updateKycStatus(userId: string, status: 'approved' | 'rejected') {
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ kyc_status: status })
-        .eq('id', userId);
-
-      if (error) throw error;
-      
-      await fetchUsers();
-      
-      toast({
-        title: "Success",
-        description: `KYC status updated to ${status}`,
-      });
-    } catch (error) {
-      console.error('Error updating KYC status:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update KYC status",
-        variant: "destructive",
-      });
-    }
+  function handleSearchChange(term: string) {
+    setSearchTerm(term);
+    setPage(1); // Reset to first page when search changes
   }
 
-  const filteredUsers = searchTerm
-    ? users.filter(user => 
-        user.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        user.id.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    : users;
+  function handleFilterChange(filter: string, value: string) {
+    setFilters(prev => ({ ...prev, [filter]: value }));
+    setPage(1); // Reset to first page when filters change
+  }
+
+  function handlePageChange(newPage: number) {
+    setPage(newPage);
+  }
+
+  function handleVerifyKYC(userId: string) {
+    setSelectedUserId(userId);
+    setVerificationDialogOpen(true);
+  }
 
   const columns = [
     {
@@ -206,18 +272,14 @@ export default function UsersPage() {
     {
       header: "Actions",
       cell: (user: any) => (
-        <div className="flex gap-2">
-          <Button 
-            variant="default" 
-            size="sm"
-            onClick={() => {
-              setSelectedUserId(user.id);
-              setVerificationDialogOpen(true);
-            }}
-          >
-            Verify KYC
-          </Button>
-        </div>
+        <Button 
+          variant="default" 
+          size="sm"
+          onClick={() => handleVerifyKYC(user.id)}
+          disabled={!user.kyc_doc_url}
+        >
+          Verify KYC
+        </Button>
       )
     }
   ];
@@ -233,12 +295,17 @@ export default function UsersPage() {
       </div>
       
       <div className="mb-6">
-        <Input
-          placeholder="Search users by name or ID..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-md"
+        <UserSearchFilter 
+          onSearch={handleSearchChange}
+          onFilterChange={handleFilterChange}
+          filters={filters}
         />
+      </div>
+      
+      <div className="mb-4">
+        <p className="text-sm text-muted-foreground">
+          Showing {filteredUsers.length} of {totalCount} users
+        </p>
       </div>
       
       <UserTable 
@@ -249,6 +316,9 @@ export default function UsersPage() {
         onToggleAdmin={toggleAdminStatus}
         onToggleBan={toggleBanStatus}
         columns={columns}
+        page={page}
+        totalPages={totalPages}
+        onPageChange={handlePageChange}
       />
       
       <KYCVerificationDialog

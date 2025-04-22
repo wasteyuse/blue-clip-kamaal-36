@@ -1,9 +1,10 @@
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Transaction, TransactionStatus } from "@/types/transactions";
 import { format } from "date-fns";
 import { isSuspiciousTransaction } from "@/utils/transactionUtils";
+import { TransactionStatusBadge } from "./TransactionStatusBadge";
+import { TransactionActions } from "./TransactionActions";
 
 interface TransactionRowProps {
   transaction: Transaction;

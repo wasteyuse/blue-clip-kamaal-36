@@ -1,9 +1,10 @@
 
 import { Badge } from "@/components/ui/badge";
+import { KycStatus } from "./KycBadge";
 
 interface UserStatusBadgeProps {
-  isBanned?: boolean; // Changed from banned to isBanned
-  kycStatus?: 'pending' | 'approved' | 'rejected';
+  isBanned?: boolean;
+  kycStatus?: KycStatus;
 }
 
 export function UserStatusBadge({ isBanned, kycStatus }: UserStatusBadgeProps) {

@@ -1,7 +1,7 @@
 
 import { Badge } from "@/components/ui/badge";
 
-type KycStatus = 'pending' | 'approved' | 'rejected';
+export type KycStatus = 'pending' | 'approved' | 'rejected';
 
 interface KycBadgeProps {
   status: KycStatus;

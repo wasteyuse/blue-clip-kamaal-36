@@ -1,11 +1,10 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Users } from "lucide-react";
 import { UserTable } from "@/components/admin/UserTable";
-import { KycBadge } from "@/components/admin/KycBadge";
+import { KycBadge, KycStatus } from "@/components/admin/KycBadge";
 import { KycDocLink } from "@/components/admin/KycDocLink";
 import { KYCVerificationDialog } from "@/components/admin/KYCVerificationDialog";
 import { UserSearchFilter } from "@/components/admin/UserSearchFilter";
@@ -16,7 +15,7 @@ const USERS_PER_PAGE = 10;
 
 // Type for filtered users with additional properties
 interface UserWithMeta extends Tables<'profiles'> {
-  isBanned?: boolean; // Using a separate property instead of "banned"
+  isBanned?: boolean;
 }
 
 export default function UsersPage() {
@@ -274,7 +273,7 @@ export default function UsersPage() {
     },
     {
       header: "KYC Status",
-      cell: (user: UserWithMeta) => <KycBadge status={user.kyc_status || 'pending'} />
+      cell: (user: UserWithMeta) => <KycBadge status={user.kyc_status as KycStatus || 'pending'} />
     },
     {
       header: "Actions",

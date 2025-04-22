@@ -7,6 +7,7 @@ import { UserTableSkeleton } from "./UserTableSkeleton";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
+import { KycStatus } from "./KycBadge";
 
 // Updated interface to include additional properties not in the database schema
 interface User extends Tables<'profiles'> {
@@ -85,7 +86,10 @@ export function UserTable({
                     </div>
                   </TableCell>
                   <TableCell>
-                    <UserStatusBadge isBanned={user.isBanned} kycStatus={user.kyc_status} />
+                    <UserStatusBadge 
+                      isBanned={user.isBanned} 
+                      kycStatus={user.kyc_status as KycStatus} 
+                    />
                   </TableCell>
                   <TableCell>
                     <UserActions

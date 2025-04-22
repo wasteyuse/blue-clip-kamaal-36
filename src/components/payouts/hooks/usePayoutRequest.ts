@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 
 interface PayoutMethod {
   id: string;
+  user_id: string; // Added the missing user_id property
   method_type: 'UPI' | 'BANK';
   details: string;
   is_default: boolean;

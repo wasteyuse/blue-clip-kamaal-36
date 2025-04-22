@@ -1,67 +1,35 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PayoutHistory } from "@/components/PayoutHistory";
-import { PayoutRequestForm } from "@/components/PayoutRequestForm";
-import { AffiliateDashboard } from "@/components/AffiliateDashboard";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { EarningsContent } from "@/components/earnings/EarningsContent";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function MyEarningsPage() {
-  const { user } = useAuth();
+  const { user, isAuthenticated, loading } = useAuth();
 
-  const { data: profileData, isLoading } = useQuery({
-    queryKey: ['userProfile', user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('total_earnings, total_views')
-        .eq('id', user?.id)
-        .single();
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8 flex justify-center items-center min-h-[60vh]">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
+      </div>
+    );
+  }
 
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user
-  });
-
-  if (isLoading) return <div>Loading...</div>;
+  if (!isAuthenticated) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="border rounded-lg p-8 text-center">
+          <h2 className="text-2xl font-bold mb-4">Authentication Required</h2>
+          <p className="text-muted-foreground mb-4">
+            You need to be logged in to view your earnings.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">My Earnings</h1>
-      <Tabs defaultValue="overview">
-        <TabsList className="mb-4">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="affiliate">Affiliate</TabsTrigger>
-        </TabsList>
-        <TabsContent value="overview">
-          <div className="grid md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Earnings Summary</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p>Total Views: {profileData?.total_views || 0}</p>
-                <p>Total Earnings: ₹{profileData?.total_earnings?.toFixed(2) || '0.00'}</p>
-              </CardContent>
-            </Card>
-            <PayoutRequestForm 
-              availableAmount={profileData?.total_earnings || 0} 
-              onSuccess={() => {}} 
-            />
-          </div>
-          <div className="mt-8">
-            <h2 className="text-2xl font-semibold mb-4">Payout History</h2>
-            <PayoutHistory payouts={[]} />
-          </div>
-        </TabsContent>
-        <TabsContent value="affiliate">
-          <AffiliateDashboard />
-        </TabsContent>
-      </Tabs>
+      <EarningsContent />
     </div>
   );
 }

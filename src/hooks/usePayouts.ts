@@ -19,10 +19,14 @@ export function usePayouts() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
 
     const fetchPayouts = async () => {
       try {
+        setIsLoading(true);
         const { data, error } = await supabase
           .from('payouts')
           .select('*')
@@ -52,6 +56,7 @@ export function usePayouts() {
           filter: `user_id=eq.${user.id}`
         },
         (payload) => {
+          console.log('Payouts channel update:', payload);
           switch (payload.eventType) {
             case 'INSERT':
               setPayouts(prev => [payload.new as Payout, ...prev]);

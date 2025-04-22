@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePayouts } from "@/hooks/usePayouts";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function PayoutsPage() {
   const { user } = useAuth();
@@ -16,19 +17,25 @@ export default function PayoutsPage() {
   const { data: profileData, isLoading: isProfileLoading } = useQuery({
     queryKey: ['userProfile', user?.id],
     queryFn: async () => {
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+      
       const { data, error } = await supabase
         .from('profiles')
         .select('total_earnings, total_views')
-        .eq('id', user?.id)
+        .eq('id', user.id)
         .single();
 
       if (error) throw error;
       return data;
     },
-    enabled: !!user
+    enabled: !!user?.id
   });
 
-  if (isProfileLoading || isPayoutsLoading) return <div>Loading...</div>;
+  if (isProfileLoading || isPayoutsLoading) {
+    return <PayoutsLoadingSkeleton />;
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -76,6 +83,24 @@ export default function PayoutsPage() {
             <PayoutHistory payouts={payouts} />
           </CardContent>
         </Card>
+      </div>
+    </div>
+  );
+}
+
+function PayoutsLoadingSkeleton() {
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <Skeleton className="h-10 w-40 mb-6" />
+      
+      <div className="grid md:grid-cols-2 gap-6">
+        <Skeleton className="h-[200px] rounded-lg" />
+        <Skeleton className="h-[200px] rounded-lg" />
+      </div>
+      
+      <div className="mt-8 grid md:grid-cols-2 gap-6">
+        <Skeleton className="h-[300px] rounded-lg" />
+        <Skeleton className="h-[300px] rounded-lg" />
       </div>
     </div>
   );

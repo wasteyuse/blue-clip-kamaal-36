@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,13 +11,21 @@ import { useToast } from "@/components/ui/use-toast";
 
 type Submission = {
   id: string;
-  title: string;
+  // Making title optional since it doesn't exist in the database structure
+  title?: string; 
   content_url: string;
   status: string;
   created_at: string;
   views: number;
   earnings: number;
   reason?: string;
+  // Additional fields from Supabase
+  asset_used?: string;
+  type?: string;
+  user_id?: string;
+  affiliate_clicks?: number;
+  affiliate_conversions?: number;
+  affiliate_link?: string;
 };
 
 export default function ContentPage() {
@@ -64,7 +73,15 @@ export default function ContentPage() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setSubmissions(data || []);
+      
+      // Transform the data to match our Submission type
+      // Using content_url as title if title is not available
+      const formattedData = data?.map(item => ({
+        ...item,
+        title: item.content_url.split('/').pop() || 'Untitled Content'
+      }));
+      
+      setSubmissions(formattedData || []);
     } catch (error: any) {
       toast({
         variant: "destructive",

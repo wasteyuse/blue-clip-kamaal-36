@@ -8,7 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 
 interface PayoutMethod {
   id: string;
-  user_id: string; // Added the missing user_id property
+  user_id: string;
   method_type: 'UPI' | 'BANK';
   details: string;
   is_default: boolean;
@@ -61,9 +61,9 @@ export const usePayoutRequest = (availableAmount: number, onSuccess: () => void)
     enabled: !!user
   });
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, amountValue: string) => {
     e.preventDefault();
-    const numAmount = parseFloat(amount);
+    const numAmount = parseFloat(amountValue);
 
     const error = validateAmount(numAmount, availableAmount);
     if (error) {

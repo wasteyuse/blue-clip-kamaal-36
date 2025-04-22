@@ -9,11 +9,16 @@ export type PayoutRequest = {
   amount: number;
   status: string;
   requested_at: string;
-  profiles: { name: string; email?: string } | null;
+  profiles: { 
+    name: string; 
+    email?: string;
+    created_at?: string;
+  } | null;
   wallets: { balance: number } | null;
+  reject_reason?: string;
 };
 
-export function usePayoutRequests(status: string = "pending") {
+export function usePayoutRequests() {
   const [payoutRequests, setPayoutRequests] = useState<PayoutRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -24,16 +29,16 @@ export function usePayoutRequests(status: string = "pending") {
     setError(null);
     try {
       const { data, error: fetchError } = await supabase
-        .from("payout_requests")
+        .from("payouts")
         .select(`
           id,
           user_id,
           amount,
           status,
           requested_at,
-          profiles:profiles(name)
+          reject_reason,
+          profiles:profiles(name, email, created_at)
         `)
-        .eq("status", status)
         .order("requested_at", { ascending: false });
 
       if (fetchError) throw fetchError;
@@ -75,15 +80,40 @@ export function usePayoutRequests(status: string = "pending") {
     }
   }
 
-  async function approveOrReject(payout: PayoutRequest, newStatus: "approved" | "rejected") {
+  async function approveOrReject(payout: PayoutRequest, newStatus: "approved" | "rejected", reason?: string) {
     try {
+      const updateData: any = { status: newStatus };
+      
+      // Add rejection reason if provided
+      if (newStatus === 'rejected' && reason) {
+        updateData.reject_reason = reason;
+      }
+      
       const { error: updateError } = await supabase
-        .from("payout_requests")
-        .update({ status: newStatus })
+        .from("payouts")
+        .update(updateData)
         .eq("id", payout.id);
 
       if (updateError) throw updateError;
 
+      // If approved and we have wallet data, deduct from wallet balance
+      if (newStatus === 'approved' && payout.wallets) {
+        // Create a completed transaction record
+        const { error: transactionError } = await supabase
+          .from('transactions')
+          .insert({
+            user_id: payout.user_id,
+            amount: payout.amount,
+            type: 'payout',
+            status: 'completed',
+            source: `Payout ID: ${payout.id}`
+          });
+          
+        if (transactionError) {
+          console.error('Error creating transaction record:', transactionError);
+        }
+      }
+      
       // Refresh the list after updating
       await fetchPayoutRequests();
       
@@ -101,8 +131,38 @@ export function usePayoutRequests(status: string = "pending") {
 
   useEffect(() => {
     fetchPayoutRequests();
+    
+    // Set up real-time listener for payout changes
+    const payoutsChannel = supabase
+      .channel('payout-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'payouts'
+        },
+        (payload) => {
+          console.log('Payout change received:', payload);
+          fetchPayoutRequests();
+          
+          // Show toast notification for status changes
+          if (payload.eventType === 'UPDATE' && payload.new.status !== payload.old.status) {
+            toast({
+              title: `Payout ${payload.new.status}`,
+              description: `Payout request of ₹${payload.new.amount} has been ${payload.new.status}`,
+              variant: payload.new.status === 'rejected' ? 'destructive' : 'default',
+            });
+          }
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(payoutsChannel);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status]);
+  }, []);
 
   return { payoutRequests, isLoading, error, approveOrReject, fetchPayoutRequests };
 }

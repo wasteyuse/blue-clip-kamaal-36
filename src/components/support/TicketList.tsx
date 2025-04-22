@@ -2,12 +2,14 @@
 import { SupportTicket } from '@/types/support';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface TicketListProps {
   tickets: SupportTicket[];
+  isLoading?: boolean;
 }
 
-export function TicketList({ tickets }: TicketListProps) {
+export function TicketList({ tickets, isLoading }: TicketListProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'open':
@@ -20,6 +22,31 @@ export function TicketList({ tickets }: TicketListProps) {
         return 'bg-gray-500';
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="bg-white p-6 rounded-lg shadow">
+            <div className="flex justify-between items-start mb-4">
+              <Skeleton className="h-6 w-1/3" />
+              <Skeleton className="h-6 w-20" />
+            </div>
+            <Skeleton className="h-20 w-full mb-4" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (!tickets.length) {
+    return (
+      <div className="text-center py-8 bg-gray-50 rounded-lg">
+        <p className="text-gray-600">No tickets found.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

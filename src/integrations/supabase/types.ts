@@ -26,28 +26,34 @@ export type Database = {
       }
       assets: {
         Row: {
+          category: string | null
           created_at: string
           description: string | null
           file_url: string | null
           id: string
           title: string | null
           type: string | null
+          workflow_status: Database["public"]["Enums"]["workflow_status"]
         }
         Insert: {
+          category?: string | null
           created_at?: string
           description?: string | null
           file_url?: string | null
           id?: string
           title?: string | null
           type?: string | null
+          workflow_status?: Database["public"]["Enums"]["workflow_status"]
         }
         Update: {
+          category?: string | null
           created_at?: string
           description?: string | null
           file_url?: string | null
           id?: string
           title?: string | null
           type?: string | null
+          workflow_status?: Database["public"]["Enums"]["workflow_status"]
         }
         Relationships: []
       }
@@ -351,7 +357,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      workflow_status: "draft" | "in_review" | "approved" | "rejected"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -466,6 +472,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      workflow_status: ["draft", "in_review", "approved", "rejected"],
+    },
   },
 } as const

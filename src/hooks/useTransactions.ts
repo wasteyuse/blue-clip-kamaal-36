@@ -20,12 +20,18 @@ export function useTransactions() {
     const fetchTransactions = async () => {
       try {
         setIsLoading(true);
+        setError(null);
+        
         // Get profile name in a separate query since the join relationship doesn't exist
-        const { data: profileData } = await supabase
+        const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select("name")
           .eq("id", user.id)
           .single();
+
+        if (profileError) {
+          console.error("Error fetching profile data:", profileError);
+        }
 
         const { data, error } = await supabase
           .from("transactions")
@@ -70,6 +76,8 @@ export function useTransactions() {
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
+          console.log("Transaction channel update:", payload);
+          
           // Handle different types of changes
           if (payload.eventType === "INSERT") {
             // Get the profile data for the new transaction

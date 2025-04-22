@@ -2,6 +2,7 @@
 import React from 'react';
 import { EarningsContent } from "@/components/earnings/EarningsContent";
 import { useAuth } from "@/contexts/AuthContext";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function MyEarningsPage() {
   const { user, isAuthenticated, loading } = useAuth();

@@ -11,17 +11,39 @@ import { useDashboardData } from "@/hooks/useDashboardData";
 import { useTransactions } from "@/hooks/useTransactions";
 import { usePayouts } from "@/hooks/usePayouts";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useEffect, useState } from "react";
 
 export function EarningsContent() {
   const { stats, isLoading: statsLoading } = useDashboardData();
-  const { transactions, isLoading: transactionsLoading } = useTransactions();
+  const { transactions, isLoading: transactionsLoading, error: transactionsError } = useTransactions();
   const { payouts, isLoading: payoutsLoading } = usePayouts();
+  const [dataLoaded, setDataLoaded] = useState(false);
 
-  // Show loading skeleton if any of the data is loading
-  const isLoading = statsLoading || transactionsLoading;
+  // Track when all data has been loaded
+  useEffect(() => {
+    if (!statsLoading && !transactionsLoading && !payoutsLoading) {
+      // Add a small delay to ensure UI updates properly
+      const timer = setTimeout(() => {
+        setDataLoaded(true);
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [statsLoading, transactionsLoading, payoutsLoading]);
 
-  if (isLoading) {
+  // Show loading skeleton if any of the data is loading and we haven't fully loaded yet
+  if (!dataLoaded || statsLoading || transactionsLoading || payoutsLoading) {
     return <EarningsLoadingSkeleton />;
+  }
+
+  // Show error state if there was an error loading transactions
+  if (transactionsError) {
+    return (
+      <div className="p-8 border rounded-lg text-center">
+        <h2 className="text-xl font-semibold mb-2">Error Loading Data</h2>
+        <p className="text-muted-foreground mb-4">{transactionsError}</p>
+        <Button onClick={() => window.location.reload()}>Try Again</Button>
+      </div>
+    );
   }
 
   return (

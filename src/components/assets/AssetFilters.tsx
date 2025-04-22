@@ -9,6 +9,9 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
+import type { Database } from "@/integrations/supabase/types";
+
+type WorkflowStatus = Database["public"]["Enums"]["workflow_status"];
 
 interface AssetFiltersProps {
   category: string;
@@ -34,7 +37,7 @@ const WORKFLOW_STATUSES = [
   { value: "in_review", label: "In Review" },
   { value: "approved", label: "Approved" },
   { value: "rejected", label: "Rejected" },
-];
+] as const;
 
 export function AssetFilters({
   category,

@@ -33,6 +33,7 @@ export type Database = {
           id: string
           title: string | null
           type: string | null
+          updated_at: string | null
           workflow_status: Database["public"]["Enums"]["workflow_status"]
         }
         Insert: {
@@ -43,6 +44,7 @@ export type Database = {
           id?: string
           title?: string | null
           type?: string | null
+          updated_at?: string | null
           workflow_status?: Database["public"]["Enums"]["workflow_status"]
         }
         Update: {
@@ -53,6 +55,7 @@ export type Database = {
           id?: string
           title?: string | null
           type?: string | null
+          updated_at?: string | null
           workflow_status?: Database["public"]["Enums"]["workflow_status"]
         }
         Relationships: []

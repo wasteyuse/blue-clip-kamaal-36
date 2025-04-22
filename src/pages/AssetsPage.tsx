@@ -1,6 +1,5 @@
 
-import { useState } from "react";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { PreviewDialog } from "@/components/assets/PreviewDialog";
 import { AssetFilters } from "@/components/assets/AssetFilters";
+import { WorkflowActions } from "@/components/assets/WorkflowActions";
 import { Database } from "@/integrations/supabase/types";
 
 type WorkflowStatus = Database["public"]["Enums"]["workflow_status"];
@@ -31,11 +31,31 @@ export default function AssetsPage() {
   const [category, setCategory] = useState("all");
   const [status, setStatus] = useState<string>("all");
   const [previewAsset, setPreviewAsset] = useState<Asset | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
+    checkAdminStatus();
     fetchAssets();
   }, [category, status]);
+
+  const checkAdminStatus = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from('admins')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+
+    if (error) {
+      console.error('Error checking admin status:', error);
+      return;
+    }
+
+    setIsAdmin(!!data);
+  };
 
   const fetchAssets = async () => {
     try {
@@ -46,7 +66,6 @@ export default function AssetsPage() {
       }
       
       if (status !== "all") {
-        // Only apply the filter if it's not "all"
         if (status === "draft" || status === "in_review" || status === "approved" || status === "rejected") {
           query = query.eq("workflow_status", status as WorkflowStatus);
         }
@@ -90,7 +109,7 @@ export default function AssetsPage() {
       approved: "success",
       rejected: "destructive",
     };
-    return <Badge variant={variants[status]}>{status}</Badge>;
+    return <Badge variant={variants[status]}>{status.replace('_', ' ')}</Badge>;
   };
 
   const filteredAssets = assets.filter(
@@ -134,27 +153,41 @@ export default function AssetsPage() {
               </CardHeader>
               <CardContent className="p-4 pt-0">
                 <p className="text-sm text-gray-500 mb-4">{asset.description}</p>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPreviewAsset(asset)}
-                  >
-                    <Eye className="h-4 w-4 mr-2" />
-                    Preview
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDownload(asset)}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Download
-                  </Button>
+                <div className="flex flex-col gap-3">
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setPreviewAsset(asset)}
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      Preview
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDownload(asset)}
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Download
+                    </Button>
+                  </div>
+                  {isAdmin && (
+                    <WorkflowActions
+                      assetId={asset.id}
+                      currentStatus={asset.workflow_status}
+                      onStatusChange={fetchAssets}
+                    />
+                  )}
                 </div>
               </CardContent>
             </Card>
           ))}
+          {filteredAssets.length === 0 && (
+            <div className="col-span-3 text-center py-8 text-gray-500">
+              No assets found
+            </div>
+          )}
         </div>
       )}
 

@@ -18,6 +18,8 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { Loader2 } from "lucide-react";
 
 const formSchema = z.object({
   fullName: z.string().min(2, {
@@ -44,6 +46,7 @@ export default function RegisterPage() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { loading: authLoading } = useAuth();
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -59,7 +62,8 @@ export default function RegisterPage() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.signUp({
+      // Sign up the user with Supabase
+      const { data, error } = await supabase.auth.signUp({
         email: values.email,
         password: values.password,
         options: {
@@ -73,20 +77,44 @@ export default function RegisterPage() {
         throw error;
       }
 
+      console.log("Registration successful:", data);
+
       toast({
-        title: "Success",
-        description: "Please check your email to confirm your account.",
+        title: "Account created successfully",
+        description: "Welcome to BlueHustle! You're now signed in.",
       });
+      
+      // Redirect to dashboard
       navigate('/dashboard');
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      
+      let errorMessage = "Failed to create account";
+      if (error.message) {
+        if (error.message.includes("already registered")) {
+          errorMessage = "This email is already registered. Please log in instead.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message || "Failed to create account",
+        description: errorMessage,
       });
     } finally {
       setIsLoading(false);
     }
+  }
+
+  // Redirect if already loading auth state
+  if (authLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+      </div>
+    );
   }
 
   return (
@@ -190,7 +218,14 @@ export default function RegisterPage() {
             />
             
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "Creating account..." : "Create Account"}
+              {isLoading ? (
+                <span className="flex items-center">
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Creating account...
+                </span>
+              ) : (
+                "Create Account"
+              )}
             </Button>
           </form>
         </Form>

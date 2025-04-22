@@ -81,7 +81,11 @@ serve(async (req: Request) => {
         throw submissionError
       }
 
-      const updateData: any = { status: 'approved' }
+      const updateData: any = { 
+        status: 'approved',
+        views: 0,  // Initialize views
+        earnings: 0  // Initialize earnings
+      }
       
       if (submission.type === 'product') {
         updateData.affiliate_link = `https://wrvkgerfvxijlvxzstnc.supabase.co/aff/${submissionId}`
@@ -96,6 +100,9 @@ serve(async (req: Request) => {
         throw updateError
       }
 
+      // Log approval action
+      console.log(`Submission ${submissionId} approved by admin ${user.id}`)
+
       return new Response(
         JSON.stringify({ message: 'Submission approved successfully' }),
         {
@@ -107,6 +114,7 @@ serve(async (req: Request) => {
 
     throw new Error('Invalid action')
   } catch (error) {
+    console.error('Error in manage-admin function:', error.message)
     return new Response(
       JSON.stringify({ error: error.message }),
       {

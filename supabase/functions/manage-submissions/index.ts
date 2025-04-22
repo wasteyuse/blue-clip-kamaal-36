@@ -31,7 +31,7 @@ serve(async (req: Request) => {
       throw new Error('Invalid token')
     }
 
-    const { action, submissionId, status, type, contentUrl, assetUsed } = await req.json()
+    const { action, submissionId, status, reason, type, contentUrl, assetUsed } = await req.json()
 
     if (action === 'submit') {
       // Check if user is a creator
@@ -53,13 +53,17 @@ serve(async (req: Request) => {
             type,
             content_url: contentUrl,
             asset_used: assetUsed,
-            status: 'pending'
+            status: 'pending',
+            views: 0,
+            earnings: 0
           }
         ])
 
       if (submitError) {
         throw submitError
       }
+
+      console.log(`New content submitted by user ${user.id}: ${type}, using asset: ${assetUsed || 'none'}`)
 
       return new Response(
         JSON.stringify({ message: 'Content submitted successfully' }),
@@ -82,14 +86,46 @@ serve(async (req: Request) => {
         throw new Error('Only admins can update submission status')
       }
 
+      const updateData: any = { status }
+      
+      // Add rejection reason if provided
+      if (status === 'rejected' && reason) {
+        updateData.reason = reason
+      }
+
       const { error: updateError } = await supabaseClient
         .from('submissions')
-        .update({ status })
+        .update(updateData)
         .eq('id', submissionId)
 
       if (updateError) {
         throw updateError
       }
+
+      // Create transaction record for rejected submissions to notify users
+      if (status === 'rejected') {
+        // Get the submission to find the user_id
+        const { data: submission } = await supabaseClient
+          .from('submissions')
+          .select('user_id')
+          .eq('id', submissionId)
+          .single()
+          
+        if (submission) {
+          // Add a notification transaction
+          await supabaseClient
+            .from('transactions')
+            .insert({
+              user_id: submission.user_id,
+              amount: 0,
+              type: 'notification',
+              status: 'completed',
+              source: `Submission ${submissionId} was rejected: ${reason || 'No reason provided'}`
+            })
+        }
+      }
+
+      console.log(`Submission ${submissionId} status updated to ${status} by admin ${user.id}`)
 
       return new Response(
         JSON.stringify({ message: 'Submission status updated successfully' }),
@@ -102,6 +138,7 @@ serve(async (req: Request) => {
 
     throw new Error('Invalid action')
   } catch (error) {
+    console.error('Error in manage-submissions function:', error.message)
     return new Response(
       JSON.stringify({ error: error.message }),
       {

@@ -128,6 +128,7 @@ export type Database = {
           is_creator: boolean | null
           kyc_doc_url: string | null
           kyc_status: string | null
+          kyc_verification_reason: string | null
           name: string | null
           payout_bank: string | null
           payout_upi: string | null
@@ -143,6 +144,7 @@ export type Database = {
           is_creator?: boolean | null
           kyc_doc_url?: string | null
           kyc_status?: string | null
+          kyc_verification_reason?: string | null
           name?: string | null
           payout_bank?: string | null
           payout_upi?: string | null
@@ -158,6 +160,7 @@ export type Database = {
           is_creator?: boolean | null
           kyc_doc_url?: string | null
           kyc_status?: string | null
+          kyc_verification_reason?: string | null
           name?: string | null
           payout_bank?: string | null
           payout_upi?: string | null
@@ -360,6 +363,14 @@ export type Database = {
       is_admin: {
         Args: { uid: string }
         Returns: boolean
+      }
+      verify_kyc: {
+        Args: {
+          user_id_param: string
+          status_param: string
+          reason_param?: string
+        }
+        Returns: undefined
       }
     }
     Enums: {

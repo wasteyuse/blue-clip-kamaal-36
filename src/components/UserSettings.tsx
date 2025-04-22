@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
@@ -7,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { ProfileSection } from "./settings/ProfileSection";
 import { PayoutSection } from "./settings/PayoutSection";
 import { SecuritySection } from "./settings/SecuritySection";
+import { KYCSection } from "./settings/KYCSection";
 
 export interface Profile {
   id: string;
@@ -152,6 +152,8 @@ export default function UserSettings() {
         onProfileChange={handleProfileChange}
         onSave={handleSaveProfile}
       />
+
+      <KYCSection />
 
       <PayoutSection
         profile={profile}

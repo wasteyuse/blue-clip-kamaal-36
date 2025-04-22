@@ -7,6 +7,7 @@ import { Users } from "lucide-react";
 import { UserTable } from "@/components/admin/UserTable";
 import { KycBadge } from "@/components/admin/KycBadge";
 import { KycDocLink } from "@/components/admin/KycDocLink";
+import { KYCVerificationDialog } from "@/components/admin/KYCVerificationDialog";
 
 export default function UsersPage() {
   const [users, setUsers] = useState<any[]>([]);
@@ -14,6 +15,8 @@ export default function UsersPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isTableLoading, setIsTableLoading] = useState(true);
   const { toast } = useToast();
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [verificationDialogOpen, setVerificationDialogOpen] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -207,16 +210,12 @@ export default function UsersPage() {
           <Button 
             variant="default" 
             size="sm"
-            onClick={() => updateKycStatus(user.id, 'approved')}
+            onClick={() => {
+              setSelectedUserId(user.id);
+              setVerificationDialogOpen(true);
+            }}
           >
-            Approve
-          </Button>
-          <Button 
-            variant="destructive" 
-            size="sm"
-            onClick={() => updateKycStatus(user.id, 'rejected')}
-          >
-            Reject
+            Verify KYC
           </Button>
         </div>
       )
@@ -250,6 +249,13 @@ export default function UsersPage() {
         onToggleAdmin={toggleAdminStatus}
         onToggleBan={toggleBanStatus}
         columns={columns}
+      />
+      
+      <KYCVerificationDialog
+        open={verificationDialogOpen}
+        onClose={() => setVerificationDialogOpen(false)}
+        userId={selectedUserId || ''}
+        onVerificationComplete={fetchUsers}
       />
     </div>
   );

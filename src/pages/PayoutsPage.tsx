@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PayoutHistory } from "@/components/PayoutHistory";
 import { PayoutRequestForm } from "@/components/PayoutRequestForm";
@@ -7,9 +7,11 @@ import { PayoutMethods } from "@/components/PayoutMethods";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 export default function PayoutsPage() {
   const { user } = useAuth();
+  const [payoutsData, setPayoutsData] = useState<any[]>([]);
 
   const { data: profileData, isLoading: isProfileLoading } = useQuery({
     queryKey: ['userProfile', user?.id],
@@ -26,22 +28,65 @@ export default function PayoutsPage() {
     enabled: !!user
   });
 
-  const { data: payoutsData, isLoading: isPayoutsLoading, refetch: refetchPayouts } = useQuery({
-    queryKey: ['payoutHistory', user?.id],
-    queryFn: async () => {
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchPayouts = async () => {
       const { data, error } = await supabase
         .from('payouts')
         .select('*')
-        .eq('user_id', user?.id)
+        .eq('user_id', user.id)
         .order('requested_at', { ascending: false });
 
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!user
-  });
+      if (error) {
+        toast.error('Failed to load payout history');
+        return;
+      }
+      setPayoutsData(data || []);
+    };
 
-  if (isProfileLoading || isPayoutsLoading) return <div>Loading...</div>;
+    fetchPayouts();
+
+    // Real-time subscription
+    const payoutsChannel = supabase
+      .channel('payouts')
+      .on(
+        'postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'payouts', 
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          switch (payload.eventType) {
+            case 'INSERT':
+              setPayoutsData(prev => [payload.new as any, ...prev]);
+              break;
+            case 'UPDATE':
+              setPayoutsData(prev => 
+                prev.map(payout => 
+                  payout.id === payload.new.id ? payload.new : payout
+                )
+              );
+              break;
+            case 'DELETE':
+              setPayoutsData(prev => 
+                prev.filter(payout => payout.id !== payload.old.id)
+              );
+              break;
+          }
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription
+    return () => {
+      supabase.removeChannel(payoutsChannel);
+    };
+  }, [user]);
+
+  if (isProfileLoading) return <div>Loading...</div>;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -65,7 +110,7 @@ export default function PayoutsPage() {
           <CardContent>
             <PayoutRequestForm 
               availableAmount={profileData?.total_earnings || 0} 
-              onSuccess={() => refetchPayouts()} 
+              onSuccess={() => {}} 
             />
           </CardContent>
         </Card>
@@ -86,7 +131,7 @@ export default function PayoutsPage() {
             <CardTitle>Payout History</CardTitle>
           </CardHeader>
           <CardContent>
-            <PayoutHistory payouts={payoutsData || []} />
+            <PayoutHistory payouts={payoutsData} />
           </CardContent>
         </Card>
       </div>

@@ -31,7 +31,7 @@ serve(async (req: Request) => {
       throw new Error('Invalid token')
     }
 
-    const { action, submissionId, status, userId, type, contentUrl, assetUsed } = await req.json()
+    const { action, submissionId, status, type, contentUrl, assetUsed } = await req.json()
 
     if (action === 'submit') {
       // Check if user is a creator

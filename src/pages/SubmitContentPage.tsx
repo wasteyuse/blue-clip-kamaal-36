@@ -14,14 +14,17 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { submitContent } from "@/lib/api";
 
 const formSchema = z.object({
   title: z.string().min(1, "Title is required"),
   contentUrl: z.string().url("Must be a valid URL"),
   assetUsed: z.string().optional(),
+  type: z.string().min(1, "Content type is required"),
 });
 
 export default function SubmitContentPage() {
@@ -36,6 +39,7 @@ export default function SubmitContentPage() {
       title: "",
       contentUrl: "",
       assetUsed: "",
+      type: "content",
     },
   });
 
@@ -51,19 +55,8 @@ export default function SubmitContentPage() {
 
     setIsSubmitting(true);
     try {
-      const { error } = await supabase
-        .from('submissions')
-        .insert([
-          {
-            user_id: user.id,
-            content_url: values.contentUrl,
-            asset_used: values.assetUsed || null,
-            type: 'content', // default type
-            status: 'pending'
-          }
-        ]);
-
-      if (error) throw error;
+      // Use the API function to submit content
+      await submitContent(values.type, values.contentUrl, values.assetUsed || "");
 
       toast({
         title: "Content submitted successfully",
@@ -77,6 +70,7 @@ export default function SubmitContentPage() {
         title: "Error",
         description: error.message || "Failed to submit content",
       });
+      console.error("Submission error:", error);
     } finally {
       setIsSubmitting(false);
     }
@@ -97,6 +91,32 @@ export default function SubmitContentPage() {
                   <FormControl>
                     <Input placeholder="Enter your content title" {...field} />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Content Type</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select content type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="content">Regular Content</SelectItem>
+                      <SelectItem value="product">Product</SelectItem>
+                      <SelectItem value="review">Review</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

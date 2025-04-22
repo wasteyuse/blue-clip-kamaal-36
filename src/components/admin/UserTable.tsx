@@ -6,17 +6,11 @@ import { UserActions } from "./UserActions";
 import { UserTableSkeleton } from "./UserTableSkeleton";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Tables } from "@/integrations/supabase/types";
 
-interface User {
-  id: string;
-  name?: string;
-  email?: string;
-  is_creator?: boolean;
-  banned?: boolean;
-  total_earnings?: number;
-  total_views?: number;
-  kyc_status?: 'pending' | 'approved' | 'rejected';
-  kyc_doc_url?: string | null;
+// Updated interface to include additional properties not in the database schema
+interface User extends Tables<'profiles'> {
+  isBanned?: boolean;
 }
 
 interface Column {
@@ -91,12 +85,12 @@ export function UserTable({
                     </div>
                   </TableCell>
                   <TableCell>
-                    <UserStatusBadge banned={user.banned} />
+                    <UserStatusBadge isBanned={user.isBanned} kycStatus={user.kyc_status} />
                   </TableCell>
                   <TableCell>
                     <UserActions
                       userId={user.id}
-                      isBanned={user.banned}
+                      isBanned={user.isBanned}
                       isCreator={user.is_creator}
                       isAdmin={admins[user.id]}
                       onToggleCreator={onToggleCreator}

@@ -4,7 +4,7 @@ import { Ban, Check } from "lucide-react";
 
 interface UserActionsProps {
   userId: string;
-  isBanned?: boolean;
+  isBanned?: boolean; // Changed from banned to isBanned
   onToggleCreator: (userId: string, status: boolean) => Promise<void>;
   onToggleAdmin: (userId: string, isAdmin: boolean) => Promise<void>;
   onToggleBan: (userId: string, isBanned: boolean) => Promise<void>;

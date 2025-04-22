@@ -2,12 +2,12 @@
 import { Badge } from "@/components/ui/badge";
 
 interface UserStatusBadgeProps {
-  banned?: boolean;
+  isBanned?: boolean; // Changed from banned to isBanned
   kycStatus?: 'pending' | 'approved' | 'rejected';
 }
 
-export function UserStatusBadge({ banned, kycStatus }: UserStatusBadgeProps) {
-  if (banned) {
+export function UserStatusBadge({ isBanned, kycStatus }: UserStatusBadgeProps) {
+  if (isBanned) {
     return <Badge variant="destructive">Banned</Badge>;
   }
   

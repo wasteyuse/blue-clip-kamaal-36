@@ -12,10 +12,14 @@ export function useTransactions() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
 
     const fetchTransactions = async () => {
       try {
+        setIsLoading(true);
         // Get profile name in a separate query since the join relationship doesn't exist
         const { data: profileData } = await supabase
           .from("profiles")

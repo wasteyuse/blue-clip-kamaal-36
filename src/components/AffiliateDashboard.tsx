@@ -3,10 +3,10 @@ import React, { useEffect } from 'react';
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Copy, Link, BarChart, TrendingUp, DollarSign } from "lucide-react";
 import { toast } from "sonner";
+import { AffiliateSummaryCards } from "./affiliate/AffiliateSummaryCards";
+import { AffiliateList } from "./affiliate/AffiliateList";
+import { EmptyAffiliateState } from "./affiliate/EmptyAffiliateState";
 
 interface AffiliateSubmission {
   id: string;
@@ -44,7 +44,6 @@ export function AffiliateDashboard() {
     enabled: !!user
   });
 
-  // Set up real-time listener for affiliate updates
   useEffect(() => {
     if (!user) return;
 
@@ -76,11 +75,6 @@ export function AffiliateDashboard() {
       supabase.removeChannel(channel);
     };
   }, [user, refetch]);
-
-  const copyToClipboard = (link: string) => {
-    navigator.clipboard.writeText(link);
-    toast.success('Affiliate link copied to clipboard');
-  };
 
   const getTotalEarnings = () => {
     if (!affiliateData) return 0;
@@ -124,123 +118,18 @@ export function AffiliateDashboard() {
     </div>
   );
 
-  // Summary cards for total stats
-  const SummaryCards = () => (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-      <Card className="bg-gradient-to-br from-blue-50 to-blue-100">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-blue-700">
-            <TrendingUp className="h-5 w-5" />
-            <span>Total Clicks</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-3xl font-bold text-blue-800">{getTotalClicks()}</p>
-        </CardContent>
-      </Card>
-      
-      <Card className="bg-gradient-to-br from-green-50 to-green-100">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-green-700">
-            <BarChart className="h-5 w-5" />
-            <span>Total Conversions</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-3xl font-bold text-green-800">{getTotalConversions()}</p>
-        </CardContent>
-      </Card>
-      
-      <Card className="bg-gradient-to-br from-purple-50 to-purple-100">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-purple-700">
-            <DollarSign className="h-5 w-5" />
-            <span>Total Earnings</span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-3xl font-bold text-purple-800">₹{getTotalEarnings().toFixed(2)}</p>
-        </CardContent>
-      </Card>
-    </div>
-  );
-
   return (
     <div className="space-y-6">
       {!affiliateData || affiliateData.length === 0 ? (
-        <div className="bg-blue-50 border border-blue-200 rounded-md p-6 text-center">
-          <div className="inline-flex mx-auto mb-4 p-3 rounded-full bg-blue-100">
-            <Link className="h-6 w-6 text-blue-600" />
-          </div>
-          <h3 className="text-lg font-medium text-blue-800 mb-2">No Active Affiliate Promotions</h3>
-          <p className="text-blue-700 mb-4">You don't have any approved affiliate promotions yet.</p>
-          <Button variant="outline" className="bg-white" onClick={() => window.location.href = '/dashboard/submit'}>
-            Create Content to Earn
-          </Button>
-        </div>
+        <EmptyAffiliateState />
       ) : (
         <>
-          <SummaryCards />
-          {affiliateData.map((item) => (
-            <Card key={item.id} className="overflow-hidden border-blue-100">
-              <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100">
-                <CardTitle className="flex items-center gap-2">
-                  <BarChart className="h-5 w-5 text-blue-500" />
-                  <span>Asset: {item.asset_used || 'Unknown'}</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <div className="grid md:grid-cols-3 gap-4 mb-6">
-                  <div className="bg-blue-50 p-3 rounded-lg">
-                    <p className="text-sm text-blue-600 mb-1">Clicks</p>
-                    <div className="flex items-center gap-2">
-                      <TrendingUp className="h-4 w-4 text-blue-500" />
-                      <p className="text-xl font-semibold">{item.affiliate_clicks || 0}</p>
-                    </div>
-                  </div>
-                  <div className="bg-green-50 p-3 rounded-lg">
-                    <p className="text-sm text-green-600 mb-1">Conversions</p>
-                    <p className="text-xl font-semibold">{item.affiliate_conversions || 0}</p>
-                  </div>
-                  <div className="bg-purple-50 p-3 rounded-lg">
-                    <p className="text-sm text-purple-600 mb-1">Earnings</p>
-                    <p className="text-xl font-semibold">₹{(item.earnings || 0).toFixed(2)}</p>
-                  </div>
-                </div>
-                {item.affiliate_link && (
-                  <div className="mt-4 space-y-2">
-                    <p className="text-sm font-medium text-gray-700">Your Affiliate Link:</p>
-                    <div className="flex items-center space-x-2">
-                      <div className="flex-grow bg-gray-50 p-3 rounded text-sm overflow-x-auto">
-                        {item.affiliate_link}
-                      </div>
-                      <Button 
-                        variant="outline" 
-                        size="icon" 
-                        onClick={() => item.affiliate_link && copyToClipboard(item.affiliate_link)}
-                        className="flex-shrink-0"
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                )}
-                {item.content_url && (
-                  <div className="mt-4">
-                    <p className="text-sm font-medium text-gray-700">Your Content:</p>
-                    <a 
-                      href={item.content_url} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="text-blue-600 hover:underline text-sm block mt-1 break-all"
-                    >
-                      {item.content_url}
-                    </a>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+          <AffiliateSummaryCards
+            totalClicks={getTotalClicks()}
+            totalConversions={getTotalConversions()}
+            totalEarnings={getTotalEarnings()}
+          />
+          <AffiliateList affiliateData={affiliateData} />
         </>
       )}
     </div>

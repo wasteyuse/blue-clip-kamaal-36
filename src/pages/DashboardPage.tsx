@@ -3,32 +3,36 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useDashboardData } from "@/hooks/useDashboardData";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function DashboardPage() {
-  // Mock data - would come from Supabase in production
-  const stats = {
-    totalViews: 124500,
-    totalEarnings: 124.5,
-    pendingEarnings: 25.75,
-    totalPaidOut: 98.75,
-    affiliateEarnings: 45.2,
-    viewEarnings: 79.3,
-    contentCount: 12,
-    approvalRate: 85,
-    progress: {
-      currentPayout: 25.75,
-      minPayout: 10,
-      maxPayout: 500
-    }
-  };
+  const { stats, recentContent, isLoading } = useDashboardData();
   
-  const recentContent = [
-    { id: 1, title: "Top 10 Indian Street Foods", status: "approved", views: 34500, earnings: 34.5 },
-    { id: 2, title: "Mumbai City Travel Guide", status: "approved", views: 28000, earnings: 28.0 },
-    { id: 3, title: "Yoga Basics for Beginners", status: "pending", views: 0, earnings: 0 },
-    { id: 4, title: "Traditional Indian Clothing", status: "approved", views: 15500, earnings: 15.5 },
-  ];
-
+  if (isLoading) {
+    return (
+      <div className="flex flex-col gap-6">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
+          <p className="text-gray-600">Loading your data...</p>
+        </div>
+        <div className="grid gap-6 md:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <Card key={i}>
+              <CardHeader className="pb-2">
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-8 w-24 mt-2" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-4 w-32" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+  
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -106,7 +110,7 @@ export default function DashboardPage() {
                   </div>
                   <span className="text-sm font-medium">₹{stats.viewEarnings.toFixed(2)}</span>
                 </div>
-                <Progress value={64} className="h-2" />
+                <Progress value={stats.totalEarnings > 0 ? (stats.viewEarnings / stats.totalEarnings) * 100 : 0} className="h-2" />
               </div>
               
               <div className="space-y-2">
@@ -117,7 +121,7 @@ export default function DashboardPage() {
                   </div>
                   <span className="text-sm font-medium">₹{stats.affiliateEarnings.toFixed(2)}</span>
                 </div>
-                <Progress value={36} className="h-2" />
+                <Progress value={stats.totalEarnings > 0 ? (stats.affiliateEarnings / stats.totalEarnings) * 100 : 0} className="h-2" />
               </div>
             </div>
             
@@ -151,7 +155,7 @@ export default function DashboardPage() {
                     <div className="grid grid-cols-3 gap-4">
                       <div>
                         <p className="text-sm text-gray-500">This Month</p>
-                        <p className="text-lg font-medium">₹45.25</p>
+                        <p className="text-lg font-medium">₹{(stats.totalEarnings * 0.4).toFixed(2)}</p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-500">Paid Out</p>
@@ -159,7 +163,7 @@ export default function DashboardPage() {
                       </div>
                       <div>
                         <p className="text-sm text-gray-500">Pending</p>
-                        <p className="text-lg font-medium">₹45.25</p>
+                        <p className="text-lg font-medium">₹{(stats.totalEarnings * 0.4).toFixed(2)}</p>
                       </div>
                     </div>
                   </div>
@@ -169,7 +173,7 @@ export default function DashboardPage() {
                     <div className="grid grid-cols-3 gap-4">
                       <div>
                         <p className="text-sm text-gray-500">This Week</p>
-                        <p className="text-lg font-medium">₹12.75</p>
+                        <p className="text-lg font-medium">₹{(stats.totalEarnings * 0.1).toFixed(2)}</p>
                       </div>
                       <div>
                         <p className="text-sm text-gray-500">Paid Out</p>
@@ -177,7 +181,7 @@ export default function DashboardPage() {
                       </div>
                       <div>
                         <p className="text-sm text-gray-500">Pending</p>
-                        <p className="text-lg font-medium">₹12.75</p>
+                        <p className="text-lg font-medium">₹{(stats.totalEarnings * 0.1).toFixed(2)}</p>
                       </div>
                     </div>
                   </div>
@@ -240,40 +244,48 @@ export default function DashboardPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="relative overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="text-xs text-gray-700 uppercase bg-gray-50">
-                <tr>
-                  <th scope="col" className="px-6 py-3">Title</th>
-                  <th scope="col" className="px-6 py-3">Status</th>
-                  <th scope="col" className="px-6 py-3">Views</th>
-                  <th scope="col" className="px-6 py-3">Earnings</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentContent.map((content) => (
-                  <tr key={content.id} className="bg-white border-b hover:bg-gray-50">
-                    <td className="px-6 py-4 font-medium text-gray-900">
-                      {content.title}
-                    </td>
-                    <td className="px-6 py-4">
-                      {content.status === 'approved' ? (
-                        <Badge variant="success">Approved</Badge>
-                      ) : (
-                        <Badge variant="warning">Pending</Badge>
-                      )}
-                    </td>
-                    <td className="px-6 py-4">
-                      {content.views.toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4">
-                      ₹{content.earnings.toFixed(2)}
-                    </td>
+          {recentContent.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              You haven't submitted any content yet. 
+              <br/>
+              <a href="/dashboard/content/submit" className="text-blue-600 hover:underline">Submit your first content now</a>
+            </div>
+          ) : (
+            <div className="relative overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                  <tr>
+                    <th scope="col" className="px-6 py-3">Title</th>
+                    <th scope="col" className="px-6 py-3">Status</th>
+                    <th scope="col" className="px-6 py-3">Views</th>
+                    <th scope="col" className="px-6 py-3">Earnings</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {recentContent.map((content) => (
+                    <tr key={content.id} className="bg-white border-b hover:bg-gray-50">
+                      <td className="px-6 py-4 font-medium text-gray-900">
+                        {content.title}
+                      </td>
+                      <td className="px-6 py-4">
+                        {content.status === 'approved' ? (
+                          <Badge variant="success" className="bg-green-500">Approved</Badge>
+                        ) : (
+                          <Badge variant="warning" className="bg-yellow-500">Pending</Badge>
+                        )}
+                      </td>
+                      <td className="px-6 py-4">
+                        {content.views.toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4">
+                        ₹{content.earnings.toFixed(2)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -24,6 +24,7 @@ import AboutPage from '@/pages/AboutPage';
 import PrivacyPage from '@/pages/PrivacyPage';
 import TermsPage from '@/pages/TermsPage';
 import UserSettings from '@/components/UserSettings';
+import HelpPage from '@/pages/HelpPage';
 
 // Admin pages
 import AdminDashboard from '@/pages/admin/AdminDashboard';
@@ -67,6 +68,7 @@ function App() {
         <Route path="affiliate" element={<AffiliatePage />} />
         <Route path="payouts" element={<PayoutsPage />} />
         <Route path="settings" element={<UserSettings />} />
+        <Route path="help" element={<HelpPage />} />
       </Route>
       
       {/* Admin routes - Using AdminLayout with Outlet */}

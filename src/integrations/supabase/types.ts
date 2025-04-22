@@ -200,6 +200,39 @@ export type Database = {
         }
         Relationships: []
       }
+      support_tickets: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          reply: string | null
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          reply?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          reply?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           amount: number
@@ -311,6 +344,10 @@ export type Database = {
       increment_user_earnings: {
         Args: { user_id_param: string; amount_param: number }
         Returns: undefined
+      }
+      is_admin: {
+        Args: { uid: string }
+        Returns: boolean
       }
     }
     Enums: {

@@ -90,10 +90,11 @@ export default function ContentPage() {
       if (error) throw error;
       
       // Transform the data to match our Submission type
-      // Using content_url as title if title is not available
+      // Using content_url as filename if title is not available
       const formattedData = data?.map(item => ({
         ...item,
-        title: item.content_url.split('/').pop() || 'Untitled Content'
+        // Extract filename from content_url to use as display title
+        contentTitle: item.content_url.split('/').pop() || 'Untitled Content'
       }));
       
       setSubmissions(formattedData || []);
@@ -163,7 +164,7 @@ export default function ContentPage() {
                     <div className="aspect-video bg-gray-100 relative">
                       <img 
                         src="/placeholder.svg" 
-                        alt={content.title} 
+                        alt={content.contentTitle} 
                         className="w-full h-full object-cover"
                       />
                       <div className="absolute top-2 right-2">
@@ -171,7 +172,7 @@ export default function ContentPage() {
                       </div>
                     </div>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-lg">{content.title}</CardTitle>
+                      <CardTitle className="text-lg">{content.contentTitle}</CardTitle>
                       <CardDescription>
                         {new Date(content.created_at).toLocaleDateString()}
                         {content.views > 0 && ` • ${content.views.toLocaleString()} views`}
@@ -216,7 +217,7 @@ export default function ContentPage() {
                     <div className="aspect-video bg-gray-100 relative">
                       <img 
                         src="/placeholder.svg" 
-                        alt={content.title} 
+                        alt={content.contentTitle} 
                         className="w-full h-full object-cover"
                       />
                       <div className="absolute top-2 right-2">
@@ -224,7 +225,7 @@ export default function ContentPage() {
                       </div>
                     </div>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-lg">{content.title}</CardTitle>
+                      <CardTitle className="text-lg">{content.contentTitle}</CardTitle>
                       <CardDescription>
                         Submitted on {new Date(content.created_at).toLocaleDateString()}
                       </CardDescription>
@@ -257,7 +258,7 @@ export default function ContentPage() {
                     <div className="aspect-video bg-gray-100 relative">
                       <img 
                         src="/placeholder.svg" 
-                        alt={content.title} 
+                        alt={content.contentTitle} 
                         className="w-full h-full object-cover"
                       />
                       <div className="absolute top-2 right-2">
@@ -265,7 +266,7 @@ export default function ContentPage() {
                       </div>
                     </div>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-lg">{content.title}</CardTitle>
+                      <CardTitle className="text-lg">{content.contentTitle}</CardTitle>
                       <CardDescription>
                         {new Date(content.created_at).toLocaleDateString()}
                         {content.views > 0 && ` • ${content.views.toLocaleString()} views`}
@@ -309,7 +310,7 @@ export default function ContentPage() {
                     <div className="aspect-video bg-gray-100 relative">
                       <img 
                         src="/placeholder.svg" 
-                        alt={content.title} 
+                        alt={content.contentTitle} 
                         className="w-full h-full object-cover"
                       />
                       <div className="absolute top-2 right-2">
@@ -317,7 +318,7 @@ export default function ContentPage() {
                       </div>
                     </div>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-lg">{content.title}</CardTitle>
+                      <CardTitle className="text-lg">{content.contentTitle}</CardTitle>
                       <CardDescription>
                         {new Date(content.created_at).toLocaleDateString()}
                       </CardDescription>

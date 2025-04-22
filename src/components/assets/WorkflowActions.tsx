@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import type { Database } from "@/integrations/supabase/types";
+import { useState } from "react";
 
 type WorkflowStatus = Database["public"]["Enums"]["workflow_status"];
 
@@ -14,8 +15,10 @@ interface WorkflowActionsProps {
 
 export function WorkflowActions({ assetId, currentStatus, onStatusChange }: WorkflowActionsProps) {
   const { toast } = useToast();
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const updateStatus = async (newStatus: WorkflowStatus) => {
+    setIsUpdating(true);
     try {
       const { error } = await supabase
         .from('assets')
@@ -25,15 +28,17 @@ export function WorkflowActions({ assetId, currentStatus, onStatusChange }: Work
       if (error) throw error;
 
       toast({
-        description: `Asset status updated to ${newStatus}`
+        description: `Asset status updated to ${newStatus.replace('_', ' ')}`
       });
       
       onStatusChange();
     } catch (error: any) {
       toast({
         variant: "destructive",
-        description: error.message
+        description: error.message || "Failed to update status"
       });
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -43,8 +48,9 @@ export function WorkflowActions({ assetId, currentStatus, onStatusChange }: Work
         size="sm" 
         variant="outline"
         onClick={() => updateStatus('in_review')}
+        disabled={isUpdating}
       >
-        Submit for Review
+        {isUpdating ? "Updating..." : "Submit for Review"}
       </Button>
     );
   }
@@ -57,18 +63,33 @@ export function WorkflowActions({ assetId, currentStatus, onStatusChange }: Work
           variant="outline" 
           className="bg-green-50 text-green-600 hover:bg-green-100"
           onClick={() => updateStatus('approved')}
+          disabled={isUpdating}
         >
-          Approve
+          {isUpdating ? "Updating..." : "Approve"}
         </Button>
         <Button 
           size="sm" 
           variant="outline"
           className="bg-red-50 text-red-600 hover:bg-red-100"
           onClick={() => updateStatus('rejected')}
+          disabled={isUpdating}
         >
-          Reject
+          {isUpdating ? "Updating..." : "Reject"}
         </Button>
       </div>
+    );
+  }
+
+  if (currentStatus === 'rejected') {
+    return (
+      <Button 
+        size="sm" 
+        variant="outline"
+        onClick={() => updateStatus('draft')}
+        disabled={isUpdating}
+      >
+        {isUpdating ? "Updating..." : "Revise & Resubmit"}
+      </Button>
     );
   }
 

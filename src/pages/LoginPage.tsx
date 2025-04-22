@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
@@ -33,8 +33,12 @@ const formSchema = z.object({
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const { loading: authLoading } = useAuth();
+  
+  // Get the intended destination if user was redirected to login
+  const from = location.state?.from || '/dashboard';
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -61,8 +65,8 @@ export default function LoginPage() {
         description: "Welcome back to BlueHustle!",
       });
       
-      // Redirect to dashboard
-      navigate('/dashboard');
+      // Redirect to the intended destination or dashboard
+      navigate(from);
 
     } catch (error: any) {
       console.error("Login error:", error);

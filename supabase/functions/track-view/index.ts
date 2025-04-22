@@ -16,10 +16,10 @@ serve(async (req: Request) => {
   try {
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? ''
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { submissionId } = await req.json()
+    const { submissionId, isAffiliate } = await req.json()
     
     if (!submissionId) {
       throw new Error('Submission ID is required')
@@ -51,48 +51,40 @@ serve(async (req: Request) => {
     // Update views count
     const newViews = (submission.views || 0) + 1
     
-    // Calculate earnings based on content type
-    // Product content earns more for affiliate, others earn ₹1 per 1000 views
-    const baseEarnings = (newViews / 1000) // ₹1 per 1000 views
-    const finalEarnings = submission.type === 'product'
-      ? Math.max(baseEarnings, (submission.affiliate_clicks || 0) * 0.1) // Higher of views or click earnings
-      : baseEarnings
+    // Calculate earnings based on content type and whether it's an affiliate view
+    let earnings = submission.earnings || 0
+    
+    if (isAffiliate) {
+      // Affiliate views earn more
+      earnings += 0.5 // ₹0.50 per affiliate view
+    } else {
+      // Regular views earn ₹1 per 1000 views
+      earnings = (newViews / 1000)
+    }
 
     const { error: updateError } = await supabaseClient
       .from('submissions')
       .update({
         views: newViews,
-        earnings: finalEarnings,
+        earnings: earnings,
       })
       .eq('id', submissionId)
 
     if (updateError) throw updateError
 
-    // Update creator's total earnings and views
+    // Update creator's total earnings
     if (submission.user_id) {
       const { error: profileError } = await supabaseClient.rpc('increment_user_earnings', {
         user_id_param: submission.user_id,
-        amount_param: finalEarnings - (submission.earnings || 0) // Only increment the difference
+        amount_param: earnings - (submission.earnings || 0) // Only increment the difference
       })
 
       if (profileError) throw profileError
-      
-      // Update total views
-      const { error: viewsError } = await supabaseClient
-        .from('profiles')
-        .update({ 
-          total_views: supabaseClient.rpc('get_incremented_views', { user_id_param: submission.user_id })
-        })
-        .eq('id', submission.user_id)
-      
-      if (viewsError) {
-        console.error('Error updating total views:', viewsError)
-      }
     }
     
     // Create a transaction record if earnings increased
-    if (finalEarnings > (submission.earnings || 0)) {
-      const earningsDifference = finalEarnings - (submission.earnings || 0)
+    if (earnings > (submission.earnings || 0)) {
+      const earningsDifference = earnings - (submission.earnings || 0)
       
       if (earningsDifference > 0) {
         const { error: transactionError } = await supabaseClient
@@ -102,7 +94,7 @@ serve(async (req: Request) => {
             amount: earningsDifference,
             type: 'earning',
             status: 'completed',
-            source: `Content ID: ${submissionId}`
+            source: `Content ID: ${submissionId} (${isAffiliate ? 'Affiliate' : 'Regular'} View)`
           })
           
         if (transactionError) console.error('Failed to create transaction record:', transactionError)
@@ -113,7 +105,7 @@ serve(async (req: Request) => {
       JSON.stringify({ 
         success: true, 
         views: newViews, 
-        earnings: finalEarnings 
+        earnings: earnings 
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

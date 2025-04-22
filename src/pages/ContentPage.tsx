@@ -1,28 +1,84 @@
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/components/ui/use-toast";
+
+type Submission = {
+  id: string;
+  title: string;
+  content_url: string;
+  status: string;
+  created_at: string;
+  views: number;
+  earnings: number;
+  reason?: string;
+};
 
 export default function ContentPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [loading, setLoading] = useState(true);
   
-  // Mock data - would come from Supabase in production
-  const pendingContent = [
-    { id: 1, title: "Yoga Basics for Beginners", submittedDate: "2023-04-15", status: "pending" },
-    { id: 2, title: "Indian Spices Guide", submittedDate: "2023-04-14", status: "pending" },
-  ];
-  
-  const approvedContent = [
-    { id: 3, title: "Top 10 Indian Street Foods", status: "approved", views: 34500, earnings: 34.5 },
-    { id: 4, title: "Mumbai City Travel Guide", status: "approved", views: 28000, earnings: 28.0 },
-    { id: 5, title: "Traditional Indian Clothing", status: "approved", views: 15500, earnings: 15.5 },
-    { id: 6, title: "Delhi Historical Sites", status: "approved", views: 12300, earnings: 12.3 },
-  ];
-  
-  const rejectedContent = [
-    { id: 7, title: "Indian Political News", rejectedDate: "2023-03-20", reason: "Content too political/controversial" },
-  ];
+  useEffect(() => {
+    if (!user) return;
+
+    // Fetch initial submissions
+    fetchSubmissions();
+
+    // Set up real-time listener
+    const channel = supabase
+      .channel('submissions-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'submissions',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('Change received!', payload);
+          fetchSubmissions();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
+  const fetchSubmissions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('submissions')
+        .select('*')
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setSubmissions(data || []);
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error fetching content",
+        description: error.message
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const pendingContent = submissions.filter(sub => sub.status === 'pending');
+  const approvedContent = submissions.filter(sub => sub.status === 'approved');
+  const rejectedContent = submissions.filter(sub => sub.status === 'rejected');
 
   return (
     <div className="flex flex-col gap-6">
@@ -52,129 +108,168 @@ export default function ContentPage() {
           <TabsTrigger value="rejected">Rejected ({rejectedContent.length})</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="all" className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...pendingContent, ...approvedContent, ...rejectedContent].map((content: any) => (
-              <Card key={content.id} className="overflow-hidden">
-                <div className="aspect-video bg-gray-100 relative">
-                  <img 
-                    src="/placeholder.svg" 
-                    alt={content.title} 
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute top-2 right-2">
-                    {content.status === 'pending' && <Badge variant="warning">Pending</Badge>}
-                    {content.status === 'approved' && <Badge variant="success">Approved</Badge>}
-                    {content.reason && <Badge variant="destructive">Rejected</Badge>}
-                  </div>
-                </div>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">{content.title}</CardTitle>
-                  <CardDescription>
-                    {content.submittedDate && `Submitted: ${content.submittedDate}`}
-                    {content.views && `Views: ${content.views.toLocaleString()}`}
-                    {content.rejectedDate && `Rejected: ${content.rejectedDate}`}
-                  </CardDescription>
-                </CardHeader>
-                <CardFooter className="flex justify-between pt-2">
-                  <Button variant="ghost" size="sm">View Details</Button>
-                  {content.status === 'approved' && (
-                    <span className="text-sm font-medium">₹{content.earnings.toFixed(2)}</span>
-                  )}
-                </CardFooter>
-              </Card>
-            ))}
+        {loading ? (
+          <div className="pt-6">
+            <p className="text-center text-gray-500">Loading your content...</p>
           </div>
-        </TabsContent>
-        
-        <TabsContent value="pending" className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {pendingContent.map((content) => (
-              <Card key={content.id} className="overflow-hidden">
-                <div className="aspect-video bg-gray-100 relative">
-                  <img 
-                    src="/placeholder.svg" 
-                    alt={content.title} 
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute top-2 right-2">
-                    <Badge variant="warning">Pending</Badge>
-                  </div>
-                </div>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">{content.title}</CardTitle>
-                  <CardDescription>
-                    Submitted: {content.submittedDate}
-                  </CardDescription>
-                </CardHeader>
-                <CardFooter className="flex justify-between pt-2">
-                  <Button variant="ghost" size="sm">View Details</Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="approved" className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {approvedContent.map((content) => (
-              <Card key={content.id} className="overflow-hidden">
-                <div className="aspect-video bg-gray-100 relative">
-                  <img 
-                    src="/placeholder.svg" 
-                    alt={content.title} 
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute top-2 right-2">
-                    <Badge variant="success">Approved</Badge>
-                  </div>
-                </div>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">{content.title}</CardTitle>
-                  <CardDescription>
-                    Views: {content.views.toLocaleString()}
-                  </CardDescription>
-                </CardHeader>
-                <CardFooter className="flex justify-between pt-2">
-                  <Button variant="ghost" size="sm">View Details</Button>
-                  <span className="text-sm font-medium">₹{content.earnings.toFixed(2)}</span>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
-        
-        <TabsContent value="rejected" className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {rejectedContent.map((content) => (
-              <Card key={content.id} className="overflow-hidden">
-                <div className="aspect-video bg-gray-100 relative">
-                  <img 
-                    src="/placeholder.svg" 
-                    alt={content.title} 
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute top-2 right-2">
-                    <Badge variant="destructive">Rejected</Badge>
-                  </div>
-                </div>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg">{content.title}</CardTitle>
-                  <CardDescription>
-                    Rejected: {content.rejectedDate}
-                    <div className="mt-1 text-xs text-red-500">
-                      Reason: {content.reason}
+        ) : (
+          <>
+            <TabsContent value="all" className="pt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {submissions.map((content) => (
+                  <Card key={content.id} className="overflow-hidden">
+                    <div className="aspect-video bg-gray-100 relative">
+                      <img 
+                        src="/placeholder.svg" 
+                        alt={content.title} 
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute top-2 right-2">
+                        {content.status === 'pending' && <Badge variant="warning">Pending</Badge>}
+                        {content.status === 'approved' && <Badge variant="success">Approved</Badge>}
+                        {content.status === 'rejected' && <Badge variant="destructive">Rejected</Badge>}
+                      </div>
                     </div>
-                  </CardDescription>
-                </CardHeader>
-                <CardFooter className="flex justify-between pt-2">
-                  <Button variant="ghost" size="sm">View Details</Button>
-                  <Button variant="outline" size="sm">Resubmit</Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        </TabsContent>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg">{content.title}</CardTitle>
+                      <CardDescription>
+                        {new Date(content.created_at).toLocaleDateString()}
+                        {content.views > 0 && ` • ${content.views.toLocaleString()} views`}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardFooter className="flex justify-between pt-2">
+                      <Button variant="ghost" size="sm" onClick={() => window.open(content.content_url, '_blank')}>
+                        View Content
+                      </Button>
+                      {content.status === 'approved' && (
+                        <span className="text-sm font-medium">₹{content.earnings?.toFixed(2) || '0.00'}</span>
+                      )}
+                      {content.status === 'rejected' && content.reason && (
+                        <span className="text-sm text-red-500">Reason: {content.reason}</span>
+                      )}
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="pending" className="pt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {pendingContent.map((content) => (
+                  <Card key={content.id} className="overflow-hidden">
+                    <div className="aspect-video bg-gray-100 relative">
+                      <img 
+                        src="/placeholder.svg" 
+                        alt={content.title} 
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute top-2 right-2">
+                        <Badge variant="warning">Pending</Badge>
+                      </div>
+                    </div>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg">{content.title}</CardTitle>
+                      <CardDescription>
+                        {new Date(content.created_at).toLocaleDateString()}
+                        {content.views > 0 && ` • ${content.views.toLocaleString()} views`}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardFooter className="flex justify-between pt-2">
+                      <Button variant="ghost" size="sm" onClick={() => window.open(content.content_url, '_blank')}>
+                        View Content
+                      </Button>
+                      {content.status === 'approved' && (
+                        <span className="text-sm font-medium">₹{content.earnings?.toFixed(2) || '0.00'}</span>
+                      )}
+                      {content.status === 'rejected' && content.reason && (
+                        <span className="text-sm text-red-500">Reason: {content.reason}</span>
+                      )}
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="approved" className="pt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {approvedContent.map((content) => (
+                  <Card key={content.id} className="overflow-hidden">
+                    <div className="aspect-video bg-gray-100 relative">
+                      <img 
+                        src="/placeholder.svg" 
+                        alt={content.title} 
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute top-2 right-2">
+                        <Badge variant="success">Approved</Badge>
+                      </div>
+                    </div>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg">{content.title}</CardTitle>
+                      <CardDescription>
+                        {new Date(content.created_at).toLocaleDateString()}
+                        {content.views > 0 && ` • ${content.views.toLocaleString()} views`}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardFooter className="flex justify-between pt-2">
+                      <Button variant="ghost" size="sm" onClick={() => window.open(content.content_url, '_blank')}>
+                        View Content
+                      </Button>
+                      {content.status === 'approved' && (
+                        <span className="text-sm font-medium">₹{content.earnings?.toFixed(2) || '0.00'}</span>
+                      )}
+                      {content.status === 'rejected' && content.reason && (
+                        <span className="text-sm text-red-500">Reason: {content.reason}</span>
+                      )}
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="rejected" className="pt-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {rejectedContent.map((content) => (
+                  <Card key={content.id} className="overflow-hidden">
+                    <div className="aspect-video bg-gray-100 relative">
+                      <img 
+                        src="/placeholder.svg" 
+                        alt={content.title} 
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute top-2 right-2">
+                        <Badge variant="destructive">Rejected</Badge>
+                      </div>
+                    </div>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg">{content.title}</CardTitle>
+                      <CardDescription>
+                        {new Date(content.created_at).toLocaleDateString()}
+                        {content.views > 0 && ` • ${content.views.toLocaleString()} views`}
+                        {content.reason && (
+                          <div className="mt-1 text-xs text-red-500">
+                            Reason: {content.reason}
+                          </div>
+                        )}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardFooter className="flex justify-between pt-2">
+                      <Button variant="ghost" size="sm" onClick={() => window.open(content.content_url, '_blank')}>
+                        View Content
+                      </Button>
+                      {content.status === 'approved' && (
+                        <span className="text-sm font-medium">₹{content.earnings?.toFixed(2) || '0.00'}</span>
+                      )}
+                      {content.status === 'rejected' && content.reason && (
+                        <span className="text-sm text-red-500">Reason: {content.reason}</span>
+                      )}
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+          </>
+        )}
       </Tabs>
     </div>
   );
